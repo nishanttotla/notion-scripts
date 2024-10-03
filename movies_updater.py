@@ -32,20 +32,20 @@ def notion_database_query_all(notion: Client, database_id: str) -> dict:
 
 def read_csv(path: str) -> dict:
   """Read an IMDB export CSV file and create a dictionary keyed by movie title."""
-  new_dict = {}
+  imdb_dict = {}
   with open(path, mode ='r') as file:    
     csv_file = csv.DictReader(file)
     # Title is at position 5 in IMDB export
     for lines in csv_file:
-      if lines["Title"] in new_dict:
+      if lines["Title"] in imdb_dict:
         pprint("Found repeated key: "+ lines["Title"])
       else:
-        new_dict[lines["Title"]] = lines
-  return new_dict
+        imdb_dict[lines["Title"]] = lines
+  return imdb_dict
 
-def notion_row_add_genres(title: str, db_row: dict, full_csv: dict):
-  """Takes a row from the Notion DB and returns an updated version of it by filling in genre from full_csv"""
-  genres_str = full_csv[title]["Genres"]
+def notion_row_add_genres(title: str, db_row: dict, imdb_dict: dict):
+  """Takes a row from the Notion DB and returns an updated version of it by filling in genre from imdb_dict"""
+  genres_str = imdb_dict[title]["Genres"]
   genres = genres_str.split(",")
 
   new_db_row = db_row
@@ -56,7 +56,7 @@ def notion_row_add_genres(title: str, db_row: dict, full_csv: dict):
     genres_tagged.append({"name": genre})
 
   new_db_row["properties"]["Genres"]["multi_select"] = genres_tagged
-  return new_db_row  
+  return new_db_row
 
 
 notion = Client(auth=os.environ["NOTION_TOKEN"])
@@ -66,15 +66,14 @@ notion = Client(auth=os.environ["NOTION_TOKEN"])
 # the integration. It's a two way sharing.
 
 full_db = notion_database_query_all(notion, os.environ["MOVIES_DB"])
-full_csv = read_csv("imdb_exports.csv")
+imdb_dict = read_csv("imdb_exports.csv")
 
 
 ### Updating genres
-# for result in full_db["results"]:
-#   title = result["properties"]["Title"]["title"][0]["plain_text"]
-#   new_db_row = {}
-#   new_db_row = notion_row_add_genres(title, new_db_row, full_csv)
-#   pprint("Updated genres for: " + title)
-#   notion.pages.update(**{"page_id": result["id"], "properties": new_db_row["properties"]})
-
+for result in full_db["results"]:
+  title = result["properties"]["Title"]["title"][0]["plain_text"]
+  new_db_row = {}
+  new_db_row = notion_row_add_genres(title, new_db_row, imdb_dict)
+  pprint("Updated genres for: " + title)
+  notion.pages.update(**{"page_id": result["id"], "properties": new_db_row["properties"]})
 
