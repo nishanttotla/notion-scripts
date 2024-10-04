@@ -138,7 +138,11 @@ class NotionRowProperties():
     print("In due time! number")
 
   def maybe_update_select_field_internal(self, name:str, value):
-    print("In due time! select")
+    if (self.old_properties[name]["select"] == None) & (not self.force_update):
+      pprint("Skipping update for non-empty field " + name + " for row_id: " + self.row_id)
+
+    self.updated_properties[name] = {"type": "select"}
+    self.updated_properties[name]["select"] = {"name": value}
 
   def maybe_update_multi_select_field_internal(self, name:str, value):
     if (len(self.old_properties[name]["multi_select"]) == 0) & (not self.force_update):
@@ -178,6 +182,7 @@ for result in full_db["results"]:
 
   updated_properties = NotionRowProperties(result["id"], {}, result["properties"])
   updated_properties.maybe_update_field(ColumnType.MULTI_SELECT, "Genres", omdb_entity.genres())
+  updated_properties.maybe_update_field(ColumnType.SELECT, "Rated", omdb_entity.rated())
 
   pprint(updated_properties.updated_properties)
   i=i+1
