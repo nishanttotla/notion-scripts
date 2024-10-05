@@ -4,6 +4,7 @@ from notion_client import Client
 from pprint import pprint
 from dataclasses import dataclass
 from enum import Enum
+from datetime import datetime
 
 class ColumnType(Enum):
   UNKNOWN = 0
@@ -73,6 +74,8 @@ class OmdbEntity():
     return self.full_entity["Released"]
 
   def total_seasons(self) -> int:
+    if self.full_entity["totalSeasons"] == "N/A":
+      return 0
     return int(self.full_entity["totalSeasons"])
 
   def poster_url(self) -> str:
@@ -102,66 +105,74 @@ class NotionRowProperties():
     if col_type == ColumnType.UNKNOWN:
       raise ValueError("Type was not set for field: " + name)
     elif col_type == ColumnType.TEXT:
-      if not type(value) is str:
-        raise TypeError("Expected type str, got: " + type(value))      
       self.maybe_update_text_field_internal(name, value)
     elif col_type == ColumnType.DATE:
-      if not type(value) is str:
-        raise TypeError("Expected type str, got: " + type(value))  
       self.maybe_update_date_field_internal(name, value)
     elif col_type == ColumnType.NUMBER:
-      if not type(value) is int:
-        raise TypeError("Expected type int, got: " + type(value))      
       self.maybe_update_number_field_internal(name, value)
     elif col_type == ColumnType.SELECT:
-      if not type(value) is str:
-        raise TypeError("Expected type str, got: " + type(value))      
       self.maybe_update_select_field_internal(name, value)
     elif col_type == ColumnType.MULTI_SELECT:
-      if not type(value) is list:
-        raise TypeError("Expected type list, got: " + type(value))
       self.maybe_update_multi_select_field_internal(name, value)
     elif col_type == ColumnType.FILE:
-      if not type(value) is str:
-        raise TypeError("Expected type str, got: " + type(value))      
       self.maybe_update_file_field_internal(name, value)
     else:
       raise NotImplementedError("No implementation yet for type: " + type.name)
 
   # The update functions will skip updating if the existing property is non-empty
   # unless force_update is set.
-  def maybe_update_text_field_internal(self, name:str, value):
-    print("In due time! text")
-
-  def maybe_update_date_field_internal(self, name:str, value):
-    print("In due time! date")
-
-  def maybe_update_number_field_internal(self, name:str, value):
-    print("In due time! number")
-
-  def maybe_update_select_field_internal(self, name:str, value):
-    if (self.old_properties[name]["select"] != None) & (not self.force_update):
-      pprint("Skipping update for non-empty field " + name + " for row_id: " + self.row_id)
+  def maybe_update_text_field_internal(self, name:str, value: str):
+    if (len(self.old_properties[name]["rich_text"]) != 0) & (not self.force_update):
+      pprint("Skipping update for non-empty field '" + name + "' for row_id: " + self.row_id)
       return
 
-    self.updated_properties[name] = {"type": "select"}
+    self.updated_properties[name] = self.old_properties[name]
+    self.updated_properties[name]["rich_text"] = [{"plain_text": value, "text": {"content": value}}]
+
+  def maybe_update_date_field_internal(self, name:str, value: str):
+    if (self.old_properties[name]["date"] != None) & (not self.force_update):
+      pprint("Skipping update for non-empty field: " + name)
+      return
+
+    self.updated_properties[name] = self.old_properties[name]
+    self.updated_properties[name]["date"] = {"start": value}
+
+  def maybe_update_number_field_internal(self, name:str, value: int):
+    if (self.old_properties[name]["number"] != None) & (not self.force_update):
+      pprint("Skipping update for non-empty field: " + name)
+      return
+
+    self.updated_properties[name] = self.old_properties[name]
+    self.updated_properties[name]["number"] = value
+
+  def maybe_update_select_field_internal(self, name:str, value: str):
+    if (self.old_properties[name]["select"] != None) & (not self.force_update):
+      pprint("Skipping update for non-empty field: " + name)
+      return
+
+    self.updated_properties[name] = self.old_properties[name]
     self.updated_properties[name]["select"] = {"name": value}
 
-  def maybe_update_multi_select_field_internal(self, name:str, value):
+  def maybe_update_multi_select_field_internal(self, name:str, value: list):
     if (len(self.old_properties[name]["multi_select"]) != 0) & (not self.force_update):
-      pprint("Skipping update for non-empty field " + name + " for row_id: " + self.row_id)
+      pprint("Skipping update for non-empty field: " + name)
       return
-
-    self.updated_properties[name] = {"type": "multi_select"}
 
     list_tagged = []
     for item in value:
       list_tagged.append({"name": item})
 
+    self.updated_properties[name] = self.old_properties[name]
     self.updated_properties[name]["multi_select"] = list_tagged
 
-  def maybe_update_file_field_internal(self, name:str, value):
-    print("In due time! file")
+  def maybe_update_file_field_internal(self, name:str, value: str):
+    if (len(self.old_properties[name]["files"]) != 0) & (not self.force_update):
+      pprint("Skipping update for non-empty field: " + name)
+      return
+
+    title = self.old_properties["Title"]["title"][0]["plain_text"]
+    self.updated_properties[name] = self.old_properties[name]
+    self.updated_properties[name]["files"] = [{"external": {"url": value}, "type": "external", "name": "Poster for " + title}]
 
 # Main code here
 
@@ -174,7 +185,6 @@ notion = Client(auth=os.environ["NOTION_TOKEN"])
 full_db = notion_database_query_all(notion, os.environ["MOVIES_DB"])
 pprint("Successfully fetched all DB rows from Notion")
 
-i = 0;
 # Update all fields that are missing in each row in the current Notion DB
 for result in full_db["results"]:
   pprint("===================================================")
@@ -192,21 +202,26 @@ for result in full_db["results"]:
   pprint("Creating updated Notion row...")
 
   updated_properties = NotionRowProperties(result["id"], {}, result["properties"])
+
+  updated_properties.maybe_update_field(ColumnType.TEXT, "Plot", omdb_entity.plot())
   updated_properties.maybe_update_field(ColumnType.MULTI_SELECT, "Genres", omdb_entity.genres())
+  updated_properties.maybe_update_field(ColumnType.MULTI_SELECT, "Languages", omdb_entity.languages())
+  updated_properties.maybe_update_field(ColumnType.MULTI_SELECT, "Actors", omdb_entity.actors())
+  updated_properties.maybe_update_field(ColumnType.MULTI_SELECT, "Countries", omdb_entity.countries())
+  updated_properties.maybe_update_field(ColumnType.FILE, "Poster", omdb_entity.poster_url())
+  updated_properties.maybe_update_field(ColumnType.SELECT, "Rated", omdb_entity.rated())
+  updated_properties.maybe_update_field(ColumnType.DATE, "Release Date", datetime.isoformat(datetime.strptime(omdb_entity.release_date(), "%d %b %Y")))
+  updated_properties.maybe_update_field(ColumnType.NUMBER, "Total Seasons", omdb_entity.total_seasons())
 
   pprint("--------------------------------------")
-  pprint("Created updated Notion row:")
-  # TODO: If updated properties is empty, don't write to Notion!
-  updated_properties.maybe_update_field(ColumnType.SELECT, "Rated", omdb_entity.rated())
+  # pprint("Created updated Notion row:")
+  # pprint(updated_properties.updated_properties)
 
-  pprint(updated_properties.updated_properties)
-  i=i+1
-  if (i>0):
-    break
+  if updated_properties.updated_properties == {}:
+    pprint("SKIPPING Notion page update for IMDB ID: " + imdb_id + " (Title: " + title + ")")
+    continue
 
-  # fetch OMDB entity for this page
-  # omdb_entity = omdb_get_entity(imdb_id)
-
-  # pprint("Updated genres for: " + title)
-  # notion.pages.update(**{"page_id": result["id"], "properties": new_db_row["properties"]})
+  # TODO: Add a last updated by script date field so that automatic periodic updates can happen
+  pprint("SENDING Notion page for IMDB ID: " + imdb_id + " (Title: " + title + ")")
+  notion.pages.update(**{"page_id": result["id"], "properties": updated_properties.updated_properties})
 
