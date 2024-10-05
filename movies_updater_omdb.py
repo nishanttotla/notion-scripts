@@ -48,8 +48,10 @@ class OmdbEntity():
     payload = {"i": self.imdb_id, "r": "json", "apikey": os.environ["OMDB_API_KEY"]}
     self.full_entity = requests.get(url, params=payload).json()
   
+    # TODO: Create a disk file based cache so that OMDB calls can be avoided.
     if self.full_entity.pop('Response') == 'False':
       raise GetMovieException(result['Error'])
+    pprint("--------------------------------------")  
     pprint("Fetched OMDB entity successfuly for IMDB ID: " + self.imdb_id)
 
   def genres(self) -> list:
@@ -175,15 +177,26 @@ pprint("Successfully fetched all DB rows from Notion")
 i = 0;
 # Update all fields that are missing in each row in the current Notion DB
 for result in full_db["results"]:
-  imdb_id = title = result["properties"]["IMDB ID"]["rich_text"][0]["plain_text"]
+  pprint("===================================================")
+
+  imdb_id = result["properties"]["IMDB ID"]["rich_text"][0]["plain_text"]
   title = result["properties"]["Title"]["title"][0]["plain_text"]
+
+  pprint("--------------------------------------")
   pprint("Processing IMDB ID: " + imdb_id + " (Title: " + title + ")")
 
   # Fetch the entity from OMDB
   omdb_entity = OmdbEntity(imdb_id)
 
+  pprint("--------------------------------------")
+  pprint("Creating updated Notion row...")
+
   updated_properties = NotionRowProperties(result["id"], {}, result["properties"])
   updated_properties.maybe_update_field(ColumnType.MULTI_SELECT, "Genres", omdb_entity.genres())
+
+  pprint("--------------------------------------")
+  pprint("Created updated Notion row:")
+  # TODO: If updated properties is empty, don't write to Notion!
   updated_properties.maybe_update_field(ColumnType.SELECT, "Rated", omdb_entity.rated())
 
   pprint(updated_properties.updated_properties)
