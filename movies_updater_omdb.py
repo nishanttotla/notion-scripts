@@ -210,7 +210,7 @@ for result in full_db["results"]:
   updated_properties.maybe_update_field(ColumnType.MULTI_SELECT, "Countries", omdb_entity.countries())
   updated_properties.maybe_update_field(ColumnType.FILE, "Poster", omdb_entity.poster_url())
   updated_properties.maybe_update_field(ColumnType.SELECT, "Rated", omdb_entity.rated())
-  updated_properties.maybe_update_field(ColumnType.DATE, "Release Date", datetime.isoformat(datetime.strptime(omdb_entity.release_date(), "%d %b %Y")))
+  updated_properties.maybe_update_field(ColumnType.DATE, "Release Date", datetime.strptime(omdb_entity.release_date(), '%d %b %Y').strftime('%Y-%m-%d'))
   updated_properties.maybe_update_field(ColumnType.NUMBER, "Total Seasons", omdb_entity.total_seasons())
 
   pprint("--------------------------------------")
