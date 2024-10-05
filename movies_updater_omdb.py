@@ -138,15 +138,17 @@ class NotionRowProperties():
     print("In due time! number")
 
   def maybe_update_select_field_internal(self, name:str, value):
-    if (self.old_properties[name]["select"] == None) & (not self.force_update):
+    if (self.old_properties[name]["select"] != None) & (not self.force_update):
       pprint("Skipping update for non-empty field " + name + " for row_id: " + self.row_id)
+      return
 
     self.updated_properties[name] = {"type": "select"}
     self.updated_properties[name]["select"] = {"name": value}
 
   def maybe_update_multi_select_field_internal(self, name:str, value):
-    if (len(self.old_properties[name]["multi_select"]) == 0) & (not self.force_update):
+    if (len(self.old_properties[name]["multi_select"]) != 0) & (not self.force_update):
       pprint("Skipping update for non-empty field " + name + " for row_id: " + self.row_id)
+      return
 
     self.updated_properties[name] = {"type": "multi_select"}
 
