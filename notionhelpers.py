@@ -42,12 +42,13 @@ class NotionRowProperties():
   old_properties: dict
   force_update: bool
 
-  def __init__(self, row_id: str, updated_properties: dict, old_properties: dict):
+  def __init__(self, row_id: str, updated_properties: dict, old_properties: dict, force_update=False):
     self.row_id = row_id
     self.updated_properties = updated_properties
     self.old_properties = old_properties
-    self.force_update = False
-
+    self.force_update = force_update
+    if force_update:
+      pprint("force_update=True")
 
   def maybe_update_field(self,  col_type: ColumnType, name: str, value):
     # TODO: For Python 3.10 and above, switch case statements can be used.

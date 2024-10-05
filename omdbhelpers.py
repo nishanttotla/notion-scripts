@@ -8,20 +8,25 @@ import requests
 class OmdbEntity():
   imdb_id: str
   full_entity: dict
+  ignore_cache: bool
 
-  def __init__(self, imdb_id):
+  def __init__(self, imdb_id, ignore_cache=False):
     self.imdb_id = imdb_id
     self.full_entity = {}
+    self.ignore_cache = ignore_cache
 
-    cache = Cache("./omdbcache")
-    cached_full_entity = cache.get(imdb_id)
+    if not ignore_cache:
+      cache = Cache("./omdbcache")
+      cached_full_entity = cache.get(imdb_id)
 
-    # If a cached entity is found, use that to avoid the RPC
-    if cached_full_entity:
-      pprint("--------------------------------------")  
-      pprint("Fetched CACHED MDB entity successfuly for IMDB ID: " + self.imdb_id)
-      self.full_entity = cached_full_entity
-      return
+      # If a cached entity is found, use that to avoid the RPC
+      if cached_full_entity:
+        pprint("--------------------------------------")  
+        pprint("Fetched CACHED MDB entity successfuly for IMDB ID: " + self.imdb_id)
+        self.full_entity = cached_full_entity
+        return
+    else:
+      pprint("ignore_cache=True")
 
     url = "http://www.omdbapi.com/"
     payload = {"i": self.imdb_id, "r": "json", "apikey": os.environ["OMDB_API_KEY"]}
