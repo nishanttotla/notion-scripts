@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from diskcache import Cache
 import os
 from pprint import pprint
 import requests
@@ -11,13 +12,26 @@ class OmdbEntity():
   def __init__(self, imdb_id):
     self.imdb_id = imdb_id
     self.full_entity = {}
+
+    cache = Cache("./omdbcache")
+    cached_full_entity = cache.get(imdb_id)
+
+    # If a cached entity is found, use that to avoid the RPC
+    if cached_full_entity:
+      pprint("--------------------------------------")  
+      pprint("Fetched CACHED MDB entity successfuly for IMDB ID: " + self.imdb_id)
+      self.full_entity = cached_full_entity
+      return
+
     url = "http://www.omdbapi.com/"
     payload = {"i": self.imdb_id, "r": "json", "apikey": os.environ["OMDB_API_KEY"]}
     self.full_entity = requests.get(url, params=payload).json()
   
-    # TODO: Create a disk file based cache so that OMDB calls can be avoided.
     if self.full_entity.pop('Response') == 'False':
       raise GetMovieException(result['Error'])
+
+    # Cache value for 15 days (15*86400 seconds)
+    cache.set(imdb_id, self.full_entity, expire=1296000)
     pprint("--------------------------------------")  
     pprint("Fetched OMDB entity successfuly for IMDB ID: " + self.imdb_id)
 
