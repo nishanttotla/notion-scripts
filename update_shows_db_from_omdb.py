@@ -1,4 +1,14 @@
 import os
+import sys
+
+# Get the absolute path of the directory containing the module
+omdb_module_directory = "./omdb"
+notion_module_directory = "./notionhelpers"
+
+# Add the directory to the system path
+sys.path.append(omdb_module_directory)
+sys.path.append(notion_module_directory)
+
 from datetime import datetime
 from notion_client import Client
 from notionhelpers import ColumnType
