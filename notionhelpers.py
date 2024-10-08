@@ -50,6 +50,12 @@ class NotionRowProperties():
     if force_update:
       pprint("force_update=True")
 
+  # TODO: Add getter functions here so that getting the value of a field from
+  # a Notion row is as easy as setting it. Getting will be from on old_properties.
+
+  # TODO: Why is there an old_properties and a new_properties at all? Can just have
+  # a single dictionary for this.
+
   def maybe_update_field(self,  col_type: ColumnType, name: str, value):
     # TODO: For Python 3.10 and above, switch case statements can be used.
     # Validate input types and call the right update function.
@@ -121,6 +127,9 @@ class NotionRowProperties():
       pprint("Skipping update for non-empty field: " + name)
       return
 
+    # TODO: This is a break in abstraction, assuming that Title is a field. We
+    # need another way to fetch an identifier here. Probably pass it as an
+    # argument.
     title = self.old_properties["Title"]["title"][0]["plain_text"]
     self.updated_properties[name] = self.old_properties[name]
     self.updated_properties[name]["files"] = [{"external": {"url": value}, "type": "external", "name": "Poster for " + title}]
