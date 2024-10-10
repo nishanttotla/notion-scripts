@@ -8,14 +8,14 @@ import requests
 class OmdbEntity():
   imdb_id: str
   full_entity: dict
-  ignore_cache: bool
+  force_update_cache: bool
 
-  def __init__(self, imdb_id, ignore_cache=False):
+  def __init__(self, imdb_id, force_update_cache=False):
     self.imdb_id = imdb_id
     self.full_entity = {}
-    self.ignore_cache = ignore_cache
+    self.force_update_cache = force_update_cache
 
-    if not ignore_cache:
+    if not force_update_cache:
       cache = Cache("./omdbcache")
       cached_full_entity = cache.get(imdb_id)
 
@@ -26,7 +26,7 @@ class OmdbEntity():
         self.full_entity = cached_full_entity
         return
     else:
-      pprint("ignore_cache=True")
+      pprint("force_update_cache=True")
 
     url = "http://www.omdbapi.com/"
     payload = {"i": self.imdb_id, "r": "json", "apikey": os.environ["OMDB_API_KEY"]}
@@ -35,8 +35,8 @@ class OmdbEntity():
     if self.full_entity.pop('Response') == 'False':
       raise GetMovieException(result['Error'])
 
-    # Cache value for 15 days (15*86400 seconds)
-    cache.set(imdb_id, self.full_entity, expire=1296000)
+    # Cache value for 60 days (15*86400 seconds)
+    cache.set(imdb_id, self.full_entity, expire=5184000)
     pprint("--------------------------------------")  
     pprint("Fetched OMDB entity successfuly for IMDB ID: " + self.imdb_id)
 
