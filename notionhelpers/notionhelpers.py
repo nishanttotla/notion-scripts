@@ -4,6 +4,7 @@ from notion_client import Client
 from pprint import pprint
 import requests
 
+
 class ColumnType(Enum):
   UNKNOWN = 0
   TEXT = 1
@@ -14,6 +15,7 @@ class ColumnType(Enum):
   FILE = 6
   CHECKBOX = 7
 
+
 def notion_database_query_all(notion: Client, database_id: str) -> dict:
   """Return all rows for the database."""
   data = notion.databases.query(database_id)
@@ -21,11 +23,11 @@ def notion_database_query_all(notion: Client, database_id: str) -> dict:
   has_more = data['has_more']
   next_cursor = data['next_cursor']
   while has_more == True:
-      data_while = notion.databases.query(database_id, start_cursor=next_cursor)
-      for row in data_while['results']:
-          data['results'].append(row)
-      has_more = data_while['has_more']
-      next_cursor = data_while['next_cursor']
+    data_while = notion.databases.query(database_id, start_cursor=next_cursor)
+    for row in data_while['results']:
+      data['results'].append(row)
+    has_more = data_while['has_more']
+    next_cursor = data_while['next_cursor']
 
   new_database = {
       "object": database_object,
@@ -35,6 +37,7 @@ def notion_database_query_all(notion: Client, database_id: str) -> dict:
   }
   return new_database
 
+
 @dataclass
 class NotionRowProperties():
   row_id: str
@@ -42,7 +45,11 @@ class NotionRowProperties():
   old_properties: dict
   force_update: bool
 
-  def __init__(self, row_id: str, updated_properties: dict, old_properties: dict, force_update=False):
+  def __init__(self,
+               row_id: str,
+               updated_properties: dict,
+               old_properties: dict,
+               force_update=False):
     self.row_id = row_id
     self.updated_properties = updated_properties
     self.old_properties = old_properties
@@ -56,7 +63,7 @@ class NotionRowProperties():
   # TODO: Why is there an old_properties and a new_properties at all? Can just have
   # a single dictionary for this.
 
-  def maybe_update_field(self,  col_type: ColumnType, name: str, value):
+  def maybe_update_field(self, col_type: ColumnType, name: str, value):
     # TODO: For Python 3.10 and above, switch case statements can be used.
     # Validate input types and call the right update function.
     if col_type == ColumnType.UNKNOWN:
@@ -78,15 +85,22 @@ class NotionRowProperties():
 
   # The update functions will skip updating if the existing property is non-empty
   # unless force_update is set.
-  def maybe_update_text_field_internal(self, name:str, value: str):
-    if (len(self.old_properties[name]["rich_text"]) != 0) & (not self.force_update):
-      pprint("Skipping update for non-empty field '" + name + "' for row_id: " + self.row_id)
+  def maybe_update_text_field_internal(self, name: str, value: str):
+    if (len(self.old_properties[name]["rich_text"])
+        != 0) & (not self.force_update):
+      pprint("Skipping update for non-empty field '" + name + "' for row_id: " +
+             self.row_id)
       return
 
     self.updated_properties[name] = self.old_properties[name]
-    self.updated_properties[name]["rich_text"] = [{"plain_text": value, "text": {"content": value}}]
+    self.updated_properties[name]["rich_text"] = [{
+        "plain_text": value,
+        "text": {
+            "content": value
+        }
+    }]
 
-  def maybe_update_date_field_internal(self, name:str, value: str):
+  def maybe_update_date_field_internal(self, name: str, value: str):
     if (self.old_properties[name]["date"] != None) & (not self.force_update):
       pprint("Skipping update for non-empty field: " + name)
       return
@@ -94,7 +108,7 @@ class NotionRowProperties():
     self.updated_properties[name] = self.old_properties[name]
     self.updated_properties[name]["date"] = {"start": value}
 
-  def maybe_update_number_field_internal(self, name:str, value: int):
+  def maybe_update_number_field_internal(self, name: str, value: int):
     if (self.old_properties[name]["number"] != None) & (not self.force_update):
       pprint("Skipping update for non-empty field: " + name)
       return
@@ -102,7 +116,7 @@ class NotionRowProperties():
     self.updated_properties[name] = self.old_properties[name]
     self.updated_properties[name]["number"] = value
 
-  def maybe_update_select_field_internal(self, name:str, value: str):
+  def maybe_update_select_field_internal(self, name: str, value: str):
     if (self.old_properties[name]["select"] != None) & (not self.force_update):
       pprint("Skipping update for non-empty field: " + name)
       return
@@ -110,8 +124,9 @@ class NotionRowProperties():
     self.updated_properties[name] = self.old_properties[name]
     self.updated_properties[name]["select"] = {"name": value}
 
-  def maybe_update_multi_select_field_internal(self, name:str, value: list):
-    if (len(self.old_properties[name]["multi_select"]) != 0) & (not self.force_update):
+  def maybe_update_multi_select_field_internal(self, name: str, value: list):
+    if (len(self.old_properties[name]["multi_select"])
+        != 0) & (not self.force_update):
       pprint("Skipping update for non-empty field: " + name)
       return
 
@@ -122,7 +137,7 @@ class NotionRowProperties():
     self.updated_properties[name] = self.old_properties[name]
     self.updated_properties[name]["multi_select"] = list_tagged
 
-  def maybe_update_file_field_internal(self, name:str, value: str):
+  def maybe_update_file_field_internal(self, name: str, value: str):
     if (len(self.old_properties[name]["files"]) != 0) & (not self.force_update):
       pprint("Skipping update for non-empty field: " + name)
       return
@@ -132,4 +147,10 @@ class NotionRowProperties():
     # argument.
     title = self.old_properties["Title"]["title"][0]["plain_text"]
     self.updated_properties[name] = self.old_properties[name]
-    self.updated_properties[name]["files"] = [{"external": {"url": value}, "type": "external", "name": "Poster for " + title}]
+    self.updated_properties[name]["files"] = [{
+        "external": {
+            "url": value
+        },
+        "type": "external",
+        "name": "Poster for " + title
+    }]
