@@ -77,7 +77,8 @@ for result in full_db["results"]:
            title + ")")
     continue
 
-  # TODO: Add a last updated by script date field so that automatic periodic updates can happen
+  # TODO: Add a last updated by script date field so that automatic periodic
+  # updates can happen
   pprint("SENDING Notion page for IMDB ID: " + imdb_id + " (Title: " + title +
          ")")
   notion.pages.update(**{

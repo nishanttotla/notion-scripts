@@ -13,7 +13,7 @@ class TmdbEntity():
   full_entity: dict
   force_update_cache: bool
 
-  def __init__(self, imdb_id, tmbd_id="", force_update_cache=False):
+  def __init__(self, imdb_id, tmdb_id="", force_update_cache=False):
     self.imdb_id = imdb_id
     self.tmdb_id = tmdb_id
     self.full_entity = {}
@@ -27,9 +27,9 @@ class TmdbEntity():
       if cached_full_entity:
         pprint("--------------------------------------")
         pprint("Fetched CACHED TMDB entity successfuly for IMDB ID: " +
-               self.imdb_id + " with TMDB ID: " + cached_tmdb_id)
+               self.imdb_id + " with TMDB ID: " + str(cached_full_entity["id"]))
         self.full_entity = cached_full_entity
-        self.tmdb_id = cached_tmdb_id
+        self.tmdb_id = cached_full_entity["id"]
         return
     else:
       pprint("force_update_cache=True")
@@ -50,8 +50,9 @@ class TmdbEntity():
     # that would have more, and that I'd even bother much about them. Still, it's
     # something that can be adjusted for special cases later.
     # See https://en.wikipedia.org/wiki/List_of_longest-running_scripted_American_primetime_television_series
-    append_seasons = "season/1,season/2,season/3,season/4,season/5,season/6,season/7,season/8,season/9,season/10,season/11,season/12,season/13,season/14,season/15,season/16,season/17,season/18,season/19,season/20,"
-    self.full_entity = tmdb.TV(tmdb_id).info(append_to_response=append_seasons)
+    append_seasons = "season/1,season/2,season/3,season/4,season/5,season/6,season/7,season/8,season/9,season/10,season/11,season/12,season/13,season/14,season/15,season/16,season/17,season/18,season/19,season/20"
+    self.full_entity = tmdb.TV(
+        self.tmdb_id).info(append_to_response=append_seasons)
     # TODO: How to check if the response is bad?
 
     # Cache value for 60 days (60*86400 seconds)
@@ -59,4 +60,4 @@ class TmdbEntity():
     pprint("--------------------------------------")
     pprint("Fetched TMDB entity successfuly for IMDB ID: " + self.imdb_id)
 
-  ######################### Getter Functions ###########################
+  ############################## Getter Functions ##############################
