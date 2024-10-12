@@ -13,7 +13,7 @@ from datetime import datetime
 from notion_client import Client
 from notionhelpers import ColumnType
 from notionhelpers import notion_database_query_all
-from notionhelpers import NotionRowProperties
+from notionhelpers import NotionRow
 from omdbhelpers import OmdbEntity
 from pprint import pprint
 
@@ -44,35 +44,32 @@ for result in full_db["results"]:
   pprint("--------------------------------------")
   pprint("Creating updated Notion row...")
 
-  updated_properties = NotionRowProperties(result["id"], {},
-                                           result["properties"])
+  notion_row = NotionRow(result["id"], result["properties"])
 
-  updated_properties.maybe_update_field(ColumnType.TEXT, "Plot",
-                                        omdb_entity.plot())
-  updated_properties.maybe_update_field(ColumnType.MULTI_SELECT, "Genres",
-                                        omdb_entity.genres())
-  updated_properties.maybe_update_field(ColumnType.MULTI_SELECT, "Languages",
-                                        omdb_entity.languages())
-  updated_properties.maybe_update_field(ColumnType.MULTI_SELECT, "Actors",
-                                        omdb_entity.actors())
-  updated_properties.maybe_update_field(ColumnType.MULTI_SELECT, "Countries",
-                                        omdb_entity.countries())
-  updated_properties.maybe_update_field(ColumnType.FILE, "Poster",
-                                        omdb_entity.poster_url())
-  updated_properties.maybe_update_field(ColumnType.SELECT, "Rated",
-                                        omdb_entity.rated())
-  updated_properties.maybe_update_field(
+  notion_row.maybe_update_field(ColumnType.TEXT, "Plot", omdb_entity.plot())
+  notion_row.maybe_update_field(ColumnType.MULTI_SELECT, "Genres",
+                                omdb_entity.genres())
+  notion_row.maybe_update_field(ColumnType.MULTI_SELECT, "Languages",
+                                omdb_entity.languages())
+  notion_row.maybe_update_field(ColumnType.MULTI_SELECT, "Actors",
+                                omdb_entity.actors())
+  notion_row.maybe_update_field(ColumnType.MULTI_SELECT, "Countries",
+                                omdb_entity.countries())
+  notion_row.maybe_update_field(ColumnType.FILE, "Poster",
+                                omdb_entity.poster_url())
+  notion_row.maybe_update_field(ColumnType.SELECT, "Rated", omdb_entity.rated())
+  notion_row.maybe_update_field(
       ColumnType.DATE, "Release Date",
       datetime.strptime(omdb_entity.release_date(),
                         '%d %b %Y').strftime('%Y-%m-%d'))
-  updated_properties.maybe_update_field(ColumnType.NUMBER, "Total Seasons",
-                                        omdb_entity.total_seasons())
+  notion_row.maybe_update_field(ColumnType.NUMBER, "Total Seasons",
+                                omdb_entity.total_seasons())
 
   pprint("--------------------------------------")
   # pprint("Created updated Notion row:")
-  # pprint(updated_properties.updated_properties)
+  # pprint(notion_row.get_properties())
 
-  if updated_properties.updated_properties == {}:
+  if not notion_row.commit_required():
     pprint("SKIPPING Notion page update for IMDB ID: " + imdb_id + " (Title: " +
            title + ")")
     continue
@@ -83,5 +80,5 @@ for result in full_db["results"]:
          ")")
   notion.pages.update(**{
       "page_id": result["id"],
-      "properties": updated_properties.updated_properties
+      "properties": notion_row.get_properties()
   })
