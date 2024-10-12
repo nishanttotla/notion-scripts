@@ -55,6 +55,21 @@ class NotionRow():
     self.properties = properties
     self.commit_required = False
 
+  ############################## Getter Functions ##############################
+
+  def get_id(self):
+    return row_id
+
+  def get_properties(self):
+    return properties
+
+  ############################## Setter Functions ##############################
+  # The setter functions only update the data values. It is assumed that the
+  # row provided in the constructor is a properly formed Notion row i.e. it has
+  # the field types and ids already set. This means that we don't need to worry
+  # about the full dictionaries for each property being empty - just the values
+  # may be empty.
+
   def update_field(self, col_type: ColumnType, name: str, value):
     # TODO: For Python 3.10 and above, switch case statements can be used.
     # Validate input types and call the right update function.
@@ -74,21 +89,6 @@ class NotionRow():
       self.update_file_field_internal(name, value)
     else:
       raise NotImplementedError("No implementation yet for type: " + type.name)
-
-  ############################## Getter Functions ##############################
-
-  def get_id(self):
-    return row_id
-
-  def get_properties(self):
-    return properties
-
-  ############################## Setter Functions ##############################
-  # The setter functions only update the data values. It is assumed that the
-  # row provided in the constructor is a properly formed Notion row i.e. it has
-  # the field types and ids already set. This means that we don't need to worry
-  # about the dictionaries for each property being empty - just the values may
-  # be empty.
 
   def update_text_field_internal(self, name: str, value: str):
     # TODO: Implement ability to append text instead of replacing it.
@@ -152,3 +152,49 @@ class NotionRow():
         "type": "external",
         "name": "Poster for " + title
     }]
+
+  ############################# Clearing Functions #############################
+
+  def clear_field(self, col_type: ColumnType, name: str):
+    # TODO: For Python 3.10 and above, switch case statements can be used.
+    # Validate input types and call the right update function.
+    if col_type == ColumnType.UNKNOWN:
+      raise ValueError("Type was not set for field: " + name)
+    elif col_type == ColumnType.TEXT:
+      self.clear_text_field_internal(name, value)
+    elif col_type == ColumnType.DATE:
+      self.clear_date_field_internal(name, value)
+    elif col_type == ColumnType.NUMBER:
+      self.clear_number_field_internal(name, value)
+    elif col_type == ColumnType.SELECT:
+      self.clear_select_field_internal(name, value)
+    elif col_type == ColumnType.MULTI_SELECT:
+      self.clear_multi_select_field_internal(name, value)
+    elif col_type == ColumnType.FILE:
+      self.clear_file_field_internal(name, value)
+    else:
+      raise NotImplementedError("No implementation yet for type: " + type.name)
+
+  def clear_text_field_internal(self, name: str):
+    self.properties[name]["rich_text"] = []
+    self.commit_required = True
+
+  def clear_date_field_internal(self, name: str):
+    self.properties[name]["date"] = None
+    self.commit_required = True
+
+  def clear_number_field_internal(self, name: str):
+    self.properties[name]["number"] = None
+    self.commit_required = True
+
+  def clear_select_field_internal(self, name: str):
+    self.properties[name]["select"] = None
+    self.commit_required = True
+
+  def clear_multi_select_field_internal(self, name: str):
+    self.properties[name]["multi_select"] = []
+    self.commit_required = True
+
+  def clear_file_field_internal(self, name: str):
+    self.properties[name]["files"] = []
+    self.commit_required = True
