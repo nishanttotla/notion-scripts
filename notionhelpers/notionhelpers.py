@@ -73,7 +73,13 @@ class NotionRow():
   # about the full dictionaries for each property being empty - just the values
   # may be empty.
 
-  def update_field(self, col_type: ColumnType, name: str, value):
+  def update_field(
+      self,
+      col_type: ColumnType,
+      name: str,
+      value,
+      title: str = "",
+      update_config: NotionRowUpdateConfig = NotionRowUpdateConfig.UNKNOWN):
     # TODO: For Python 3.10 and above, switch case statements can be used.
     # Validate input types and call the right update function.
     if col_type == ColumnType.UNKNOWN:
@@ -93,7 +99,8 @@ class NotionRow():
     else:
       raise NotImplementedError("No implementation yet for type: " + type.name)
 
-  def update_text_field_internal(self, name: str, value: str):
+  def update_text_field_internal(self, name: str, value: str,
+                                 update_config: NotionRowUpdateConfig):
     # TODO: Implement ability to append text instead of replacing it.
     self.properties[name]["rich_text"] = [{
         "plain_text": value,
@@ -133,7 +140,8 @@ class NotionRow():
     else:
       pprint("Update not required for field: " + name)
 
-  def update_multi_select_field_internal(self, name: str, value: list):
+  def update_multi_select_field_internal(self, name: str, value: list,
+                                         update_config: NotionRowUpdateConfig):
     list_tagged = []
     for item in value:
       list_tagged.append({"name": item})
@@ -143,11 +151,12 @@ class NotionRow():
     self.properties[name]["multi_select"] = list_tagged
     self.commit_required = True
 
-  def update_file_field_internal(self, name: str, value: str):
+  def update_file_field_internal(self, name: str, value: str, title: str,
+                                 update_config: NotionRowUpdateConfig):
     # TODO: Implement ability to append file instead of replacing it.
 
-    # TODO: Pass title as a parameter
-    title = "Unnamed file"
+    if not title:
+      title = "Unnamed file"
     self.properties[name]["files"] = [{
         "external": {
             "url": value
