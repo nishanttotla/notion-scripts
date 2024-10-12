@@ -63,6 +63,9 @@ class NotionRow():
   def get_properties(self):
     return properties
 
+  def commit_required(self):
+    return self.commit_required
+
   ############################## Setter Functions ##############################
   # The setter functions only update the data values. It is assumed that the
   # row provided in the constructor is a properly formed Notion row i.e. it has
