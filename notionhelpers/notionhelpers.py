@@ -6,20 +6,18 @@ import requests
 
 
 class ColumnType(Enum):
-  UNKNOWN = 0
-  TEXT = 1
-  DATE = 2
-  NUMBER = 3
-  SELECT = 4
-  MULTI_SELECT = 5
-  FILE = 6
-  CHECKBOX = 7
+  TEXT = 0
+  DATE = 1
+  NUMBER = 2
+  SELECT = 3
+  MULTI_SELECT = 4
+  FILE = 5
+  CHECKBOX = 6
 
 
 class NotionRowUpdateConfig(Enum):
-  UNKNOWN = 0
+  REPLACE = 0
   COMBINE = 1
-  REPLACE = 2
 
 
 def notion_database_query_all(notion: Client, database_id: str) -> dict:
@@ -79,12 +77,10 @@ class NotionRow():
       name: str,
       value,
       title: str = "",
-      update_config: NotionRowUpdateConfig = NotionRowUpdateConfig.UNKNOWN):
+      update_config: NotionRowUpdateConfig = NotionRowUpdateConfig.REPLACE):
     # TODO: For Python 3.10 and above, switch case statements can be used.
     # Validate input types and call the right update function.
-    if col_type == ColumnType.UNKNOWN:
-      raise ValueError("Type was not set for field: " + name)
-    elif col_type == ColumnType.TEXT:
+    if col_type == ColumnType.TEXT:
       self.update_text_field_internal(name, value)
     elif col_type == ColumnType.DATE:
       self.update_date_field_internal(name, value)
@@ -170,9 +166,7 @@ class NotionRow():
   def clear_field(self, col_type: ColumnType, name: str):
     # TODO: For Python 3.10 and above, switch case statements can be used.
     # Validate input types and call the right update function.
-    if col_type == ColumnType.UNKNOWN:
-      raise ValueError("Type was not set for field: " + name)
-    elif col_type == ColumnType.TEXT:
+    if col_type == ColumnType.TEXT:
       self.clear_text_field_internal(name, value)
     elif col_type == ColumnType.DATE:
       self.clear_date_field_internal(name, value)
