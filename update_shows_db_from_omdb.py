@@ -35,6 +35,9 @@ for result in full_db["results"]:
   imdb_id = result["properties"]["IMDB ID"]["rich_text"][0]["plain_text"]
   title = result["properties"]["Title"]["title"][0]["plain_text"]
 
+  if imdb_id != "tt31091039":
+    continue
+
   pprint("--------------------------------------")
   pprint("Processing IMDB ID: " + imdb_id + " (Title: " + title + ")")
 
@@ -46,30 +49,29 @@ for result in full_db["results"]:
 
   notion_row = NotionRow(result["id"], result["properties"])
 
-  notion_row.maybe_update_field(ColumnType.TEXT, "Plot", omdb_entity.plot())
-  notion_row.maybe_update_field(ColumnType.MULTI_SELECT, "Genres",
-                                omdb_entity.genres())
-  notion_row.maybe_update_field(ColumnType.MULTI_SELECT, "Languages",
-                                omdb_entity.languages())
-  notion_row.maybe_update_field(ColumnType.MULTI_SELECT, "Actors",
-                                omdb_entity.actors())
-  notion_row.maybe_update_field(ColumnType.MULTI_SELECT, "Countries",
-                                omdb_entity.countries())
-  notion_row.maybe_update_field(ColumnType.FILE, "Poster",
-                                omdb_entity.poster_url())
-  notion_row.maybe_update_field(ColumnType.SELECT, "Rated", omdb_entity.rated())
-  notion_row.maybe_update_field(
+  notion_row.update_field(ColumnType.TEXT, "Plot", omdb_entity.plot())
+  notion_row.update_field(ColumnType.MULTI_SELECT, "Genres",
+                          omdb_entity.genres())
+  notion_row.update_field(ColumnType.MULTI_SELECT, "Languages",
+                          omdb_entity.languages())
+  notion_row.update_field(ColumnType.MULTI_SELECT, "Actors",
+                          omdb_entity.actors())
+  notion_row.update_field(ColumnType.MULTI_SELECT, "Countries",
+                          omdb_entity.countries())
+  notion_row.update_field(ColumnType.FILE, "Poster", omdb_entity.poster_url())
+  notion_row.update_field(ColumnType.SELECT, "Rated", omdb_entity.rated())
+  notion_row.update_field(
       ColumnType.DATE, "Release Date",
       datetime.strptime(omdb_entity.release_date(),
                         '%d %b %Y').strftime('%Y-%m-%d'))
-  notion_row.maybe_update_field(ColumnType.NUMBER, "Total Seasons",
-                                omdb_entity.total_seasons())
+  notion_row.update_field(ColumnType.NUMBER, "Total Seasons",
+                          omdb_entity.total_seasons())
 
   pprint("--------------------------------------")
   # pprint("Created updated Notion row:")
   # pprint(notion_row.get_properties())
 
-  if not notion_row.commit_required():
+  if not notion_row.is_commit_required():
     pprint("SKIPPING Notion page update for IMDB ID: " + imdb_id + " (Title: " +
            title + ")")
     continue
@@ -80,5 +82,5 @@ for result in full_db["results"]:
          ")")
   notion.pages.update(**{
       "page_id": result["id"],
-      "properties": notion_row.get_properties()
+      "properties": notion_row.get_pending_update()
   })

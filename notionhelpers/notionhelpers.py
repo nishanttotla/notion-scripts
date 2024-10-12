@@ -47,21 +47,27 @@ class NotionRow():
   row_id: str
   properties: dict
   commit_required: bool
+  __pending_update: dict
+
+  # TODO: Make these variables private
+
+  ##### TODO: Add an update properties field here because you can't update the full row, that will cause auto fields needing to be updated.
 
   def __init__(self, row_id: str, properties: dict):
     self.row_id = row_id
     self.properties = properties
+    self.__pending_update = {}
     self.commit_required = False
 
   ############################## Getter Functions ##############################
 
   def get_id(self):
-    return row_id
+    return self.row_id
 
-  def get_properties(self):
-    return properties
+  def get_pending_update(self):
+    return self.__pending_update
 
-  def commit_required(self):
+  def is_commit_required(self):
     return self.commit_required
 
   ############################## Setter Functions ##############################
@@ -81,7 +87,7 @@ class NotionRow():
     # TODO: For Python 3.10 and above, switch case statements can be used.
     # Validate input types and call the right update function.
     if col_type == ColumnType.TEXT:
-      self.update_text_field_internal(name, value)
+      self.update_text_field_internal(name, value, update_config)
     elif col_type == ColumnType.DATE:
       self.update_date_field_internal(name, value)
     elif col_type == ColumnType.NUMBER:
@@ -89,9 +95,9 @@ class NotionRow():
     elif col_type == ColumnType.SELECT:
       self.update_select_field_internal(name, value)
     elif col_type == ColumnType.MULTI_SELECT:
-      self.update_multi_select_field_internal(name, value)
+      self.update_multi_select_field_internal(name, value, update_config)
     elif col_type == ColumnType.FILE:
-      self.update_file_field_internal(name, value)
+      self.update_file_field_internal(name, value, title, update_config)
     else:
       raise NotImplementedError("No implementation yet for type: " + type.name)
 
@@ -109,9 +115,11 @@ class NotionRow():
   def update_date_field_internal(self, name: str, value: str):
     if self.properties[name]["date"] == None:
       self.properties[name]["date"] = {"start": value}
+      self.__pending_update[name] = self.properties[name]
       self.commit_required = True
     elif self.properties[name]["date"]["start"] != value:
       self.properties[name]["date"]["start"] = value
+      self.__pending_update[name] = self.properties[name]
       self.commit_required = True
     else:
       pprint("Update not required for field: " + name)
@@ -119,9 +127,11 @@ class NotionRow():
   def update_number_field_internal(self, name: str, value: int):
     if self.properties[name]["number"] == None:
       self.properties[name]["number"] = value
+      self.__pending_update[name] = self.properties[name]
       self.commit_required = True
     elif self.properties[name]["number"] != value:
       self.properties[name]["number"] = value
+      self.__pending_update[name] = self.properties[name]
       self.commit_required = True
     else:
       pprint("Update not required for field: " + name)
@@ -129,9 +139,11 @@ class NotionRow():
   def update_select_field_internal(self, name: str, value: str):
     if self.properties[name]["select"] == None:
       self.properties[name]["select"] = {"name": value}
+      self.__pending_update[name] = self.properties[name]
       self.commit_required = True
     elif self.properties[name]["select"]["name"] != value:
       self.properties[name]["select"]["name"] = value
+      self.__pending_update[name] = self.properties[name]
       self.commit_required = True
     else:
       pprint("Update not required for field: " + name)
@@ -145,6 +157,7 @@ class NotionRow():
     # TODO: Implement ability to perform a union of the current and new lists
     # and also figure out how to pass it in every function call
     self.properties[name]["multi_select"] = list_tagged
+    self.__pending_update[name] = self.properties[name]
     self.commit_required = True
 
   def update_file_field_internal(self, name: str, value: str, title: str,
@@ -160,6 +173,8 @@ class NotionRow():
         "type": "external",
         "name": "Poster for " + title
     }]
+    self.__pending_update[name] = self.properties[name]
+    self.commit_required = True
 
   ############################# Clearing Functions #############################
 
