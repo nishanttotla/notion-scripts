@@ -13,6 +13,7 @@ class ColumnType(Enum):
   MULTI_SELECT = 4
   FILE = 5
   CHECKBOX = 6
+  RELATION = 7
 
 
 class NotionRowUpdateConfig(Enum):
@@ -83,7 +84,8 @@ class NotionRow():
       name: str,
       value,
       title: str = "",
-      update_config: NotionRowUpdateConfig = NotionRowUpdateConfig.REPLACE):
+      update_config: NotionRowUpdateConfig = NotionRowUpdateConfig.REPLACE,
+      relation_db: str = ""):
     # TODO: For Python 3.10 and above, switch case statements can be used.
     # Validate input types and call the right update function.
     if col_type == ColumnType.TEXT:
@@ -98,6 +100,9 @@ class NotionRow():
       self.__update_multi_select_field_internal(name, value, update_config)
     elif col_type == ColumnType.FILE:
       self.__update_file_field_internal(name, value, title, update_config)
+    elif col_type == ColumnType.RELATION:
+      self.__update_relation_field_internal(name, value, update_config,
+                                            relation_db)
     else:
       raise NotImplementedError("No implementation yet for type: " + type.name)
 
@@ -173,6 +178,25 @@ class NotionRow():
         "type": "external",
         "name": "Poster for " + title
     }]
+    self.__pending_update[name] = self.__properties[name]
+    self.__commit_required = True
+
+  def __update_relation_field_internal(self, name: str, value: list,
+                                       update_config: NotionRowUpdateConfig,
+                                       relation_db: str):
+    if not relation_db:
+      raise ValueError("No relation_db passed for updating RELATION field: ",
+                       name)
+    # TODO: What happens if a duplicate is added here?
+    list_tagged = []
+    for item in value:
+      list_tagged.append({"id": item})
+
+    if update_config == NotionRowUpdateConfig.REPLACE:
+      self.__properties[name]["relation"] = list_tagged
+    elif update_config == NotionRowUpdateConfig.COMBINE:
+      self.__properties[name]["relation"].extend(list_tagged)
+
     self.__pending_update[name] = self.__properties[name]
     self.__commit_required = True
 
