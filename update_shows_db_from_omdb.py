@@ -58,7 +58,10 @@ for result in full_db["results"]:
                           omdb_entity.actors())
   notion_row.update_field(ColumnType.MULTI_SELECT, "Countries",
                           omdb_entity.countries())
-  notion_row.update_field(ColumnType.FILE, "Poster", omdb_entity.poster_url())
+  notion_row.update_field(ColumnType.FILE,
+                          "Poster",
+                          omdb_entity.poster_url(),
+                          title=title)
   pprint(omdb_entity.full_entity)
   notion_row.update_field(ColumnType.SELECT, "Rated", omdb_entity.rated())
   notion_row.update_field(
