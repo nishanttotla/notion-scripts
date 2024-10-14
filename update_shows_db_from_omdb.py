@@ -35,14 +35,14 @@ for result in full_db["results"]:
   imdb_id = result["properties"]["IMDB ID"]["rich_text"][0]["plain_text"]
   title = result["properties"]["Title"]["title"][0]["plain_text"]
 
-  if imdb_id != "tt31091039":
+  if imdb_id != "tt9398466":
     continue
 
   pprint("--------------------------------------")
   pprint("Processing IMDB ID: " + imdb_id + " (Title: " + title + ")")
 
   # Fetch the entity from OMDB
-  omdb_entity = OmdbEntity(imdb_id)
+  omdb_entity = OmdbEntity(imdb_id, True)
 
   pprint("--------------------------------------")
   pprint("Creating updated Notion row...")
@@ -59,6 +59,7 @@ for result in full_db["results"]:
   notion_row.update_field(ColumnType.MULTI_SELECT, "Countries",
                           omdb_entity.countries())
   notion_row.update_field(ColumnType.FILE, "Poster", omdb_entity.poster_url())
+  pprint(omdb_entity.full_entity)
   notion_row.update_field(ColumnType.SELECT, "Rated", omdb_entity.rated())
   notion_row.update_field(
       ColumnType.DATE, "Release Date",
@@ -80,6 +81,7 @@ for result in full_db["results"]:
   # updates can happen
   pprint("SENDING Notion page for IMDB ID: " + imdb_id + " (Title: " + title +
          ")")
+  pprint(notion_row.get_pending_update())
   notion.pages.update(**{
       "page_id": result["id"],
       "properties": notion_row.get_pending_update()

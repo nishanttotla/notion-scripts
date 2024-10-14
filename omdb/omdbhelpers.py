@@ -16,8 +16,8 @@ class OmdbEntity():
     self.full_entity = {}
     self.force_update_cache = force_update_cache
 
+    cache = Cache("./omdbcache")
     if not force_update_cache:
-      cache = Cache("./omdbcache")
       cached_full_entity = cache.get(imdb_id)
 
       # If a cached entity is found, use that to avoid the RPC
