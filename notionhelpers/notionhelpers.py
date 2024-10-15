@@ -47,7 +47,6 @@ def notion_database_query_all(notion: Client, database_id: str) -> dict:
 class NotionRow():
   __row_id: str
   __properties: dict
-  __commit_required: bool
   __pending_update: dict
 
   # TODO: Make these variables private
@@ -58,18 +57,24 @@ class NotionRow():
     self.__row_id = row_id
     self.__properties = properties
     self.__pending_update = {}
-    self.__commit_required = False
 
   ############################## Getter Functions ##############################
 
-  def get_id(self):
+  def get_id(self) -> str:
+    """Get the Notion row ID."""
     return self.__row_id
 
-  def get_pending_update(self):
+  def get_pending_update(self) -> dict:
+    """Get the currently pending update."""
     return self.__pending_update
 
-  def is_commit_required(self):
-    return self.__commit_required
+  def clear_pending_update(self):
+    """Clear the currently pending update."""
+    self.__pending_update = {}
+
+  def is_commit_required(self) -> bool:
+    """Check if the value of the row has been updated since the last commit."""
+    return (self.__pending_update == {})
 
   ############################## Setter Functions ##############################
   # The setter functions only update the data values. It is assumed that the
@@ -86,8 +91,7 @@ class NotionRow():
       title: str = "",
       update_config: NotionRowUpdateConfig = NotionRowUpdateConfig.REPLACE,
       relation_db: str = ""):
-    # TODO: For Python 3.10 and above, switch case statements can be used.
-    # Validate input types and call the right update function.
+    """Update field by type, name, value, and optional fields that specify configurations."""
     if col_type == ColumnType.TEXT:
       self.__update_text_field_internal(name, value, update_config)
     elif col_type == ColumnType.DATE:
@@ -115,17 +119,14 @@ class NotionRow():
             "content": value
         }
     }]
-    self.__commit_required = True
 
   def __update_date_field_internal(self, name: str, value: str):
     if self.__properties[name]["date"] == None:
       self.__properties[name]["date"] = {"start": value}
       self.__pending_update[name] = self.__properties[name]
-      self.__commit_required = True
     elif self.__properties[name]["date"]["start"] != value:
       self.__properties[name]["date"]["start"] = value
       self.__pending_update[name] = self.__properties[name]
-      self.__commit_required = True
     else:
       pprint("Update not required for field: " + name)
 
@@ -133,11 +134,9 @@ class NotionRow():
     if self.__properties[name]["number"] == None:
       self.__properties[name]["number"] = value
       self.__pending_update[name] = self.__properties[name]
-      self.__commit_required = True
     elif self.__properties[name]["number"] != value:
       self.__properties[name]["number"] = value
       self.__pending_update[name] = self.__properties[name]
-      self.__commit_required = True
     else:
       pprint("Update not required for field: " + name)
 
@@ -145,11 +144,9 @@ class NotionRow():
     if self.__properties[name]["select"] == None:
       self.__properties[name]["select"] = {"name": value}
       self.__pending_update[name] = self.__properties[name]
-      self.__commit_required = True
     elif self.__properties[name]["select"]["name"] != value:
       self.__properties[name]["select"]["name"] = value
       self.__pending_update[name] = self.__properties[name]
-      self.__commit_required = True
     else:
       pprint("Update not required for field: " + name)
 
@@ -163,7 +160,6 @@ class NotionRow():
     # and also figure out how to pass it in every function call
     self.__properties[name]["multi_select"] = list_tagged
     self.__pending_update[name] = self.__properties[name]
-    self.__commit_required = True
 
   def __update_file_field_internal(self, name: str, value: str, title: str,
                                    update_config: NotionRowUpdateConfig):
@@ -179,7 +175,6 @@ class NotionRow():
         "name": "Poster for " + title
     }]
     self.__pending_update[name] = self.__properties[name]
-    self.__commit_required = True
 
   def __update_relation_field_internal(self, name: str, value: list,
                                        update_config: NotionRowUpdateConfig,
@@ -198,13 +193,11 @@ class NotionRow():
       self.__properties[name]["relation"].extend(list_tagged)
 
     self.__pending_update[name] = self.__properties[name]
-    self.__commit_required = True
 
   ############################# Clearing Functions #############################
 
   def clear_field(self, col_type: ColumnType, name: str):
-    # TODO: For Python 3.10 and above, switch case statements can be used.
-    # Validate input types and call the right update function.
+    """Clear field info by type and name."""
     if col_type == ColumnType.TEXT:
       self.__clear_text_field_internal(name, value)
     elif col_type == ColumnType.DATE:
@@ -222,24 +215,24 @@ class NotionRow():
 
   def __clear_text_field_internal(self, name: str):
     self.__properties[name]["rich_text"] = []
-    self.__commit_required = True
+    self.__pending_update[name] = self.__properties[name]
 
   def __clear_date_field_internal(self, name: str):
     self.__properties[name]["date"] = None
-    self.__commit_required = True
+    self.__pending_update[name] = self.__properties[name]
 
   def __clear_number_field_internal(self, name: str):
     self.__properties[name]["number"] = None
-    self.__commit_required = True
+    self.__pending_update[name] = self.__properties[name]
 
   def __clear_select_field_internal(self, name: str):
     self.__properties[name]["select"] = None
-    self.__commit_required = True
+    self.__pending_update[name] = self.__properties[name]
 
   def __clear_multi_select_field_internal(self, name: str):
     self.__properties[name]["multi_select"] = []
-    self.__commit_required = True
+    self.__pending_update[name] = self.__properties[name]
 
   def __clear_file_field_internal(self, name: str):
     self.__properties[name]["files"] = []
-    self.__commit_required = True
+    self.__pending_update[name] = self.__properties[name]
