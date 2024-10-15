@@ -64,6 +64,8 @@ class NotionRow():
     """Get the Notion row ID."""
     return self.__row_id
 
+  # TODO: Loop in the commit functionality into this class so that the client
+  # need not worry about clearing the pending update.
   def get_pending_update(self) -> dict:
     """Get the currently pending update."""
     return self.__pending_update
