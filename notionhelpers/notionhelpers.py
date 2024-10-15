@@ -72,16 +72,6 @@ class NotionRow():
     """Get the Notion row ID."""
     return self.__row_id
 
-  # TODO: Loop in the commit functionality into this class so that the client
-  # need not worry about clearing the pending update.
-  def get_pending_update(self) -> dict:
-    """Get the currently pending update."""
-    return self.__pending_update
-
-  def clear_pending_update(self):
-    """Clear the currently pending update."""
-    self.__pending_update = {}
-
   def is_commit_required(self) -> bool:
     """Check if the value of the row has been updated since the last commit."""
     return (self.__pending_update == {})
@@ -253,7 +243,7 @@ class NotionRow():
     self.__properties[name].pop("formula", None)
     self.__pending_update[name] = self.__properties[name]
 
-  ############################## Creator Functions #############################
+  ############################## DB Call Functions #############################
 
   def create_db_row(self, database_id: str) -> bool:
     """Create a new page with the current properties in the provided database_id."""
@@ -262,6 +252,10 @@ class NotionRow():
 
     if self.__row_id:
       raise ValueError("Row already exists for ID: " + self.__row_id)
+
+    if self.__pending_update == {}:
+      raise ValueError("Cannot write empty properties to database ID: " +
+                       database_id)
 
     try:
       resp = self.__sync_client.pages.create(
@@ -276,4 +270,22 @@ class NotionRow():
       self.__pending_update = {}
     except Exception as e:
       pprint("Got exception while adding row for database_id: " + database_id)
+      pprint("Exception: " + str(e))
+
+  def update_db_row(self):
+    """Update the page with the current properties."""
+    if not self.__row_id:
+      raise ValueError("Row ID not found for row")
+
+    if self.__pending_update == {}:
+      pprint("No pending updates for row ID: " + self.__row_id)
+
+    try:
+      resp = self.__sync_client.pages.update(**{
+          "page_id": self.__row_id,
+          "properties": self.__pending_update
+      })
+      self.__pending_update = {}
+    except Exception as e:
+      pprint("Got exception while update row for row ID: " + self.__row_id)
       pprint("Exception: " + str(e))
