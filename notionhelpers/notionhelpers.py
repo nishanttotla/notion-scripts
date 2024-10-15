@@ -11,10 +11,11 @@ class ColumnType(Enum):
   NUMBER = 2
   SELECT = 3
   MULTI_SELECT = 4
-  FILE = 5
+  FILES = 5
   CHECKBOX = 6
   RELATION = 7
   FORMULA = 8
+  TITLE = 9
 
 
 class NotionRowUpdateConfig(Enum):
@@ -76,6 +77,32 @@ class NotionRow():
     """Check if the value of the row has been updated since the last commit."""
     return (self.__pending_update == {})
 
+  ############################## Creator Functions #############################
+
+  def create_field(self,
+                   col_type: ColumnType,
+                   name: str,
+                   value,
+                   title: str = "",
+                   relation_db: str = ""):
+    """Create new field given type, name, value, and optional fields that specify configurations."""
+    if col_type == ColumnType.TEXT:
+      self.__create_text_field_internal(name, value)
+    elif col_type == ColumnType.DATE:
+      self.__create_date_field_internal(name, value)
+    elif col_type == ColumnType.NUMBER:
+      self.__create_number_field_internal(name, value)
+    elif col_type == ColumnType.SELECT:
+      self.__create_select_field_internal(name, value)
+    elif col_type == ColumnType.MULTI_SELECT:
+      self.__create_multi_select_field_internal(name, value)
+    elif col_type == ColumnType.FILES:
+      self.__create_file_field_internal(name, value, title)
+    elif col_type == ColumnType.RELATION:
+      self.__create_relation_field_internal(name, value, relation_db)
+    else:
+      raise NotImplementedError("No implementation yet for type: " + type.name)
+
   ############################## Setter Functions ##############################
   # The setter functions only update the data values. It is assumed that the
   # row provided in the constructor is a properly formed Notion row i.e. it has
@@ -102,7 +129,7 @@ class NotionRow():
       self.__update_select_value_internal(name, value)
     elif col_type == ColumnType.MULTI_SELECT:
       self.__update_multi_select_value_internal(name, value, update_config)
-    elif col_type == ColumnType.FILE:
+    elif col_type == ColumnType.FILES:
       self.__update_file_value_internal(name, value, title, update_config)
     elif col_type == ColumnType.RELATION:
       self.__update_relation_value_internal(name, value, update_config,
@@ -208,7 +235,7 @@ class NotionRow():
       self.__clear_select_value_internal(name)
     elif col_type == ColumnType.MULTI_SELECT:
       self.__clear_multi_select_value_internal(name)
-    elif col_type == ColumnType.FILE:
+    elif col_type == ColumnType.FILES:
       self.__clear_file_value_internal(name)
     elif col_type == ColumnType.FORMULA:
       self.__clear_formula_value_internal(name)
