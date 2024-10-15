@@ -14,6 +14,7 @@ class ColumnType(Enum):
   FILE = 5
   CHECKBOX = 6
   RELATION = 7
+  FORMULA = 8
 
 
 class NotionRowUpdateConfig(Enum):
@@ -48,15 +49,22 @@ class NotionRow():
   __row_id: str
   __properties: dict
   __pending_update: dict
-
-  # TODO: Make these variables private
-
-  ##### TODO: Add an update properties field here because you can't update the full row, that will cause auto fields needing to be updated.
+  __sync_client: Client
 
   def __init__(self, row_id: str, properties: dict):
+    """Basic constructor. Assumes that an empty row_id means the row is non-existent"""
     self.__row_id = row_id
     self.__properties = properties
-    self.__pending_update = {}
+
+    if not row_id:
+      self.__pending_update = properties
+    else:
+      self.__pending_update = {}
+
+  ############################## Setup Functions ###############################
+
+  def set_client(self, client: Client):
+    self.__sync_client = client
 
   ############################## Getter Functions ##############################
 
@@ -85,7 +93,7 @@ class NotionRow():
   # about the full dictionaries for each property being empty - just the values
   # may be empty.
 
-  def update_field(
+  def update_value(
       self,
       col_type: ColumnType,
       name: str,
@@ -93,26 +101,26 @@ class NotionRow():
       title: str = "",
       update_config: NotionRowUpdateConfig = NotionRowUpdateConfig.REPLACE,
       relation_db: str = ""):
-    """Update field by type, name, value, and optional fields that specify configurations."""
+    """Update value of field given type, name, value, and optional fields that specify configurations."""
     if col_type == ColumnType.TEXT:
-      self.__update_text_field_internal(name, value, update_config)
+      self.__update_text_value_internal(name, value, update_config)
     elif col_type == ColumnType.DATE:
-      self.__update_date_field_internal(name, value)
+      self.__update_date_value_internal(name, value)
     elif col_type == ColumnType.NUMBER:
-      self.__update_number_field_internal(name, value)
+      self.__update_number_value_internal(name, value)
     elif col_type == ColumnType.SELECT:
-      self.__update_select_field_internal(name, value)
+      self.__update_select_value_internal(name, value)
     elif col_type == ColumnType.MULTI_SELECT:
-      self.__update_multi_select_field_internal(name, value, update_config)
+      self.__update_multi_select_value_internal(name, value, update_config)
     elif col_type == ColumnType.FILE:
-      self.__update_file_field_internal(name, value, title, update_config)
+      self.__update_file_value_internal(name, value, title, update_config)
     elif col_type == ColumnType.RELATION:
-      self.__update_relation_field_internal(name, value, update_config,
+      self.__update_relation_value_internal(name, value, update_config,
                                             relation_db)
     else:
       raise NotImplementedError("No implementation yet for type: " + type.name)
 
-  def __update_text_field_internal(self, name: str, value: str,
+  def __update_text_value_internal(self, name: str, value: str,
                                    update_config: NotionRowUpdateConfig):
     # TODO: Implement ability to append text instead of replacing it.
     self.__properties[name]["rich_text"] = [{
@@ -122,7 +130,7 @@ class NotionRow():
         }
     }]
 
-  def __update_date_field_internal(self, name: str, value: str):
+  def __update_date_value_internal(self, name: str, value: str):
     if self.__properties[name]["date"] == None:
       self.__properties[name]["date"] = {"start": value}
       self.__pending_update[name] = self.__properties[name]
@@ -132,7 +140,7 @@ class NotionRow():
     else:
       pprint("Update not required for field: " + name)
 
-  def __update_number_field_internal(self, name: str, value: int):
+  def __update_number_value_internal(self, name: str, value: int):
     if self.__properties[name]["number"] == None:
       self.__properties[name]["number"] = value
       self.__pending_update[name] = self.__properties[name]
@@ -142,7 +150,7 @@ class NotionRow():
     else:
       pprint("Update not required for field: " + name)
 
-  def __update_select_field_internal(self, name: str, value: str):
+  def __update_select_value_internal(self, name: str, value: str):
     if self.__properties[name]["select"] == None:
       self.__properties[name]["select"] = {"name": value}
       self.__pending_update[name] = self.__properties[name]
@@ -152,7 +160,7 @@ class NotionRow():
     else:
       pprint("Update not required for field: " + name)
 
-  def __update_multi_select_field_internal(
+  def __update_multi_select_value_internal(
       self, name: str, value: list, update_config: NotionRowUpdateConfig):
     list_tagged = []
     for item in value:
@@ -163,7 +171,7 @@ class NotionRow():
     self.__properties[name]["multi_select"] = list_tagged
     self.__pending_update[name] = self.__properties[name]
 
-  def __update_file_field_internal(self, name: str, value: str, title: str,
+  def __update_file_value_internal(self, name: str, value: str, title: str,
                                    update_config: NotionRowUpdateConfig):
     # TODO: Implement ability to append file instead of replacing it.
 
@@ -178,7 +186,7 @@ class NotionRow():
     }]
     self.__pending_update[name] = self.__properties[name]
 
-  def __update_relation_field_internal(self, name: str, value: list,
+  def __update_relation_value_internal(self, name: str, value: list,
                                        update_config: NotionRowUpdateConfig,
                                        relation_db: str):
     if not relation_db:
@@ -198,43 +206,74 @@ class NotionRow():
 
   ############################# Clearing Functions #############################
 
-  def clear_field(self, col_type: ColumnType, name: str):
-    """Clear field info by type and name."""
+  def clear_value(self, col_type: ColumnType, name: str):
+    """Clear field value by type and name."""
     if col_type == ColumnType.TEXT:
-      self.__clear_text_field_internal(name, value)
+      self.__clear_text_value_internal(name)
     elif col_type == ColumnType.DATE:
-      self.__clear_date_field_internal(name, value)
+      self.__clear_date_value_internal(name)
     elif col_type == ColumnType.NUMBER:
-      self.__clear_number_field_internal(name, value)
+      self.__clear_number_value_internal(name)
     elif col_type == ColumnType.SELECT:
-      self.__clear_select_field_internal(name, value)
+      self.__clear_select_value_internal(name)
     elif col_type == ColumnType.MULTI_SELECT:
-      self.__clear_multi_select_field_internal(name, value)
+      self.__clear_multi_select_value_internal(name)
     elif col_type == ColumnType.FILE:
-      self.__clear_file_field_internal(name, value)
+      self.__clear_file_value_internal(name)
+    elif col_type == ColumnType.FORMULA:
+      self.__clear_formula_value_internal(name)
     else:
       raise NotImplementedError("No implementation yet for type: " + type.name)
 
-  def __clear_text_field_internal(self, name: str):
+  def __clear_text_value_internal(self, name: str):
     self.__properties[name]["rich_text"] = []
     self.__pending_update[name] = self.__properties[name]
 
-  def __clear_date_field_internal(self, name: str):
+  def __clear_date_value_internal(self, name: str):
     self.__properties[name]["date"] = None
     self.__pending_update[name] = self.__properties[name]
 
-  def __clear_number_field_internal(self, name: str):
+  def __clear_number_value_internal(self, name: str):
     self.__properties[name]["number"] = None
     self.__pending_update[name] = self.__properties[name]
 
-  def __clear_select_field_internal(self, name: str):
+  def __clear_select_value_internal(self, name: str):
     self.__properties[name]["select"] = None
     self.__pending_update[name] = self.__properties[name]
 
-  def __clear_multi_select_field_internal(self, name: str):
+  def __clear_multi_select_value_internal(self, name: str):
     self.__properties[name]["multi_select"] = []
     self.__pending_update[name] = self.__properties[name]
 
-  def __clear_file_field_internal(self, name: str):
+  def __clear_file_value_internal(self, name: str):
     self.__properties[name]["files"] = []
     self.__pending_update[name] = self.__properties[name]
+
+  def __clear_formula_value_internal(self, name: str):
+    self.__properties[name].pop("formula", None)
+    self.__pending_update[name] = self.__properties[name]
+
+  ############################## Creator Functions #############################
+
+  def create_db_row(self, database_id: str) -> bool:
+    """Create a new page with the current properties in the provided database_id."""
+    if not database_id:
+      raise ValueError("Cannot create row without a database_id")
+
+    if self.__row_id:
+      raise ValueError("Row already exists for ID: " + self.__row_id)
+
+    try:
+      resp = self.__sync_client.pages.create(
+          **{
+              "parent": {
+                  "database_id": database_id
+              },
+              "properties": self.__pending_update
+          })
+      self.__row_id = resp["id"]
+      self.__properties = resp["properties"]
+      self.__pending_update = {}
+    except Exception as e:
+      pprint("Got exception while adding row for database_id: " + database_id)
+      pprint("Exception: " + str(e))
