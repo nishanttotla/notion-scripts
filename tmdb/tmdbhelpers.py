@@ -62,3 +62,66 @@ class TmdbEntity():
     pprint("Fetched TMDB entity successfuly for IMDB ID: " + self.__imdb_id)
 
   ############################## Getter Functions ##############################
+
+  def get_backdrop_path_url(self) -> str:
+    return "https://image.tmdb.org/t/p/w780" + self.__full_entity["backdrop_path"]
+
+  def get_title(self) -> str:
+    return self.__full_entity["name"]
+
+  def get_original_title(self) -> str:
+    return self.__full_entity["original_name"]
+
+  def get_plot(self) -> str:
+    return self.__full_entity["overview"]
+
+  def get_tagline(self) -> str:
+    return self.__full_entity["tagline"]
+
+  def get_status(self) -> str:
+    return self.__full_entity["status"]
+
+  def get_status(self) -> str:
+    return self.__full_entity["type"]
+
+  def get_release_date(self) -> str:
+    return self.__full_entity["first_air_date"]
+
+  def get_tmdb_rating(self) -> float:
+    return self.__full_entity["vote_average"]
+
+  def get_content_ratings(self):
+    raise NotImplementedError("get_content_ratings is not implemented yet")
+
+  def get_genres(self) -> list:
+    def extract_name(g):
+      return g["name"]
+
+    return list(map(extract_name, self.__full_entity["genres"]))
+
+  def get_languages(self) -> list:
+    def extract_language(g):
+      return g["english_name"]
+
+    return list(map(extract_language, self.__full_entity["spoken_languages"]))
+
+  def get_production_companies(self) -> list:
+    def extract_name(g):
+      return g["name"]
+
+    return list(map(extract_name, self.__full_entity["production_companies"]))
+
+  def get_countries(self) -> list:
+    def extract_name(g):
+      return g["name"]
+
+    return list(map(extract_name, self.__full_entity["production_countries"]))
+
+  def get_creators(self) -> list:
+    def extract_name(g):
+      return g["name"]
+
+    return list(map(extract_name, self.__full_entity["created_by"]))
+
+  def get_number_of_seasons(self) -> int:
+    return self.__full_entity["number_of_seasons"]
