@@ -85,23 +85,34 @@ class NotionRow():
                    value,
                    title: str = "",
                    relation_db: str = ""):
-    """Create new field given type, name, value, and optional fields that specify configurations."""
+    """Create new field given type, name, value, and optional fields that specify configurations. Field should not exist."""
     if col_type == ColumnType.TEXT:
       self.__create_text_field_internal(name, value)
-    elif col_type == ColumnType.DATE:
-      self.__create_date_field_internal(name, value)
-    elif col_type == ColumnType.NUMBER:
-      self.__create_number_field_internal(name, value)
-    elif col_type == ColumnType.SELECT:
-      self.__create_select_field_internal(name, value)
-    elif col_type == ColumnType.MULTI_SELECT:
-      self.__create_multi_select_field_internal(name, value)
-    elif col_type == ColumnType.FILES:
-      self.__create_file_field_internal(name, value, title)
-    elif col_type == ColumnType.RELATION:
-      self.__create_relation_field_internal(name, value, relation_db)
+    elif col_type == ColumnType.TITLE:
+      self.__create_title_field_internal(name, value)
     else:
-      raise NotImplementedError("No implementation yet for type: " + type.name)
+      raise NotImplementedError("No create_field implementation yet for type: " +
+                                type.name)
+
+  def __create_text_field_internal(self, name: str, value: str):
+    self.__properties[name] = {"type": "rich_text"}
+    self.__properties[name]["rich_text"] = [{
+        "plain_text": value,
+        "text": {
+            "content": value
+        }
+    }]
+    self.__pending_update[name] = self.__properties[name]
+
+  def __create_title_field_internal(self, name: str, value: str):
+    self.__properties[name] = {"id": "title", "type": "title"}
+    self.__properties[name]["title"] = [{
+        "plain_text": value,
+        "text": {
+            "content": value
+        }
+    }]
+    self.__pending_update[name] = self.__properties[name]
 
   ############################## Setter Functions ##############################
   # The setter functions only update the data values. It is assumed that the
@@ -118,7 +129,7 @@ class NotionRow():
       title: str = "",
       update_config: NotionRowUpdateConfig = NotionRowUpdateConfig.REPLACE,
       relation_db: str = ""):
-    """Update value of field given type, name, value, and optional fields that specify configurations."""
+    """Update value of field given type, name, value, and optional fields that specify configurations. Field must exist."""
     if col_type == ColumnType.TEXT:
       self.__update_text_value_internal(name, value, update_config)
     elif col_type == ColumnType.DATE:
@@ -135,7 +146,8 @@ class NotionRow():
       self.__update_relation_value_internal(name, value, update_config,
                                             relation_db)
     else:
-      raise NotImplementedError("No implementation yet for type: " + type.name)
+      raise NotImplementedError("No update_value implementation yet for type: " +
+                                type.name)
 
   def __update_text_value_internal(self, name: str, value: str,
                                    update_config: NotionRowUpdateConfig):
@@ -224,7 +236,7 @@ class NotionRow():
   ############################# Clearing Functions #############################
 
   def clear_value(self, col_type: ColumnType, name: str):
-    """Clear field value by type and name."""
+    """Clear field value by type and name. Field must exist."""
     if col_type == ColumnType.TEXT:
       self.__clear_text_value_internal(name)
     elif col_type == ColumnType.DATE:
@@ -240,7 +252,8 @@ class NotionRow():
     elif col_type == ColumnType.FORMULA:
       self.__clear_formula_value_internal(name)
     else:
-      raise NotImplementedError("No implementation yet for type: " + type.name)
+      raise NotImplementedError("No clear_value implementation yet for type: " +
+                                type.name)
 
   def __clear_text_value_internal(self, name: str):
     self.__properties[name]["rich_text"] = []
