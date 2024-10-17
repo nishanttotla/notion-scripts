@@ -77,6 +77,69 @@ class NotionRow():
     """Check if the value of the row has been updated since the last commit."""
     return (self.__pending_update == {})
 
+  def get_value(self, col_type: ColumnType, name: str):
+    """Get value of field given type and name. Field must exist."""
+    if col_type == ColumnType.RICH_TEXT:
+      self.__get_text_value_internal(name)
+    elif col_type == ColumnType.DATE:
+      self.__get_date_value_internal(name)
+    elif col_type == ColumnType.NUMBER:
+      self.__get_number_value_internal(name)
+    elif col_type == ColumnType.SELECT:
+      self.__get_select_value_internal(name)
+    elif col_type == ColumnType.MULTI_SELECT:
+      self.__get_multi_select_value_internal(name)
+    elif col_type == ColumnType.FILES:
+      self.__get_file_value_internal(name)
+    elif col_type == ColumnType.RELATION:
+      self.__get_relation_value_internal(name)
+    else:
+      raise NotImplementedError("No get_value implementation yet for type: " +
+                                type.name)
+
+  def __get_text_value_internal(self, name: str):
+    value_list = []
+    for rt in self.__properties[name]["rich_text"]:
+      value_list.append(rt["plain_text"])
+    return value_list
+
+  def __get_date_value_internal(self, name: str):
+    if self.__properties[name]["date"] == None:
+      return None
+    return self.__properties[name]["date"]["start"]
+
+  def __get_number_value_internal(self, name: str):
+    if self.__properties[name]["number"] == None:
+      return None
+    return self.__properties[name]["number"]
+
+  def __get_select_value_internal(self, name: str):
+    if self.__properties[name]["select"] == None:
+      return None
+    return self.__properties[name]["select"]["name"]
+
+  def __get_multi_select_value_internal(self, name: str):
+    list_tagged = []
+    for item in value:
+      list_tagged.append({"name": item})
+
+    # TODO: Implement ability to perform a union of the current and new lists
+    # and also figure out how to pass it in every function call
+    self.__properties[name]["multi_select"] = list_tagged
+    self.__pending_update[name] = self.__properties[name]
+
+  def __get_file_value_internal(self, name: str):
+    value_list = []
+    for rt in self.__properties[name]["files"]:
+      value_list.append(rt["external"]["url"])
+    return value_list
+
+  def __get_relation_value_internal(self, name: str):
+    value_list = []
+    for rt in self.__properties[name]["relation"]:
+      value_list.append(rt["id"])
+    return value_list
+
   ############################## Creator Functions #############################
 
   def create_field(self,
@@ -158,6 +221,7 @@ class NotionRow():
             "content": value
         }
     }]
+    self.__pending_update[name] = self.__properties[name]
 
   def __update_date_value_internal(self, name: str, value: str):
     if self.__properties[name]["date"] == None:
@@ -303,7 +367,7 @@ class NotionRow():
 
   ############################## DB Call Functions #############################
 
-  def create_db_row(self, database_id: str) -> bool:
+  def create_new_db_row(self, database_id: str) -> bool:
     """Create a new page with the current properties in the provided database_id."""
     if not database_id:
       raise ValueError("Cannot create row without a database_id")
