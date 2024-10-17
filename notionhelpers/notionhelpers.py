@@ -130,14 +130,14 @@ class NotionRow():
 
   def __get_file_value_internal(self, name: str):
     value_list = []
-    for rt in self.__properties[name]["files"]:
-      value_list.append(rt["external"]["url"])
+    for f in self.__properties[name]["files"]:
+      value_list.append(f["external"]["url"])
     return value_list
 
   def __get_relation_value_internal(self, name: str):
     value_list = []
-    for rt in self.__properties[name]["relation"]:
-      value_list.append(rt["id"])
+    for rl in self.__properties[name]["relation"]:
+      value_list.append(rl["id"])
     return value_list
 
   ############################## Creator Functions #############################
