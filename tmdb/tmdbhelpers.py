@@ -73,8 +73,11 @@ class TmdbEntity():
   def __extract_name(self, d: dict):
     return d["name"]
 
-  def get_backdrop_path_url(self) -> str:
-    return "https://image.tmdb.org/t/p/w780" + self.__full_entity["backdrop_path"]
+  def get_imdb_id(self) -> str:
+    return self.__imdb_id
+
+  def get_tmdb_id(self) -> str:
+    return self.__tmdb_id
 
   def get_title(self) -> str:
     return self.__full_entity["name"]
@@ -82,20 +85,23 @@ class TmdbEntity():
   def get_original_title(self) -> str:
     return self.__full_entity["original_name"]
 
+  def get_tagline(self) -> str:
+    return self.__full_entity["tagline"]
+
   def get_plot(self) -> str:
     return self.__full_entity["overview"]
 
-  def get_tagline(self) -> str:
-    return self.__full_entity["tagline"]
+  def get_backdrop_path_url(self) -> str:
+    return "https://image.tmdb.org/t/p/w780" + self.__full_entity["backdrop_path"]
+
+  def get_release_date(self) -> str:
+    return self.__full_entity["first_air_date"]
 
   def get_status(self) -> str:
     return self.__full_entity["status"]
 
   def get_type(self) -> str:
     return self.__full_entity["type"]
-
-  def get_release_date(self) -> str:
-    return self.__full_entity["first_air_date"]
 
   def get_content_rating(self,
                          country_code: str = kDefaultContentRatingCountryCode
@@ -108,8 +114,22 @@ class TmdbEntity():
         default_code = result["rating"]
     return default_code
 
-  def get_genres(self) -> list:
-    return list(map(self.__extract_name, self.__full_entity["genres"]))
+  def get_cast(self) -> list:
+    return list(map(self.__extract_name, self.__full_entity["credits"]["cast"]))
+
+  def get_creators(self) -> list:
+    return list(map(self.__extract_name, self.__full_entity["created_by"]))
+
+  def get_production_companies(self) -> list:
+    return list(
+        map(self.__extract_name, self.__full_entity["production_companies"]))
+
+  def get_networks(self) -> list:
+    return list(map(self.__extract_name, self.__full_entity["networks"]))
+
+  def get_countries(self) -> list:
+    return list(
+        map(self.__extract_name, self.__full_entity["production_countries"]))
 
   def get_languages(self) -> list:
     def extract_language(g):
@@ -117,19 +137,8 @@ class TmdbEntity():
 
     return list(map(extract_language, self.__full_entity["spoken_languages"]))
 
-  def get_production_companies(self) -> list:
-    return list(
-        map(self.__extract_name, self.__full_entity["production_companies"]))
-
-  def get_countries(self) -> list:
-    return list(
-        map(self.__extract_name, self.__full_entity["production_countries"]))
-
-  def get_creators(self) -> list:
-    return list(map(self.__extract_name, self.__full_entity["created_by"]))
-
-  def get_cast(self) -> list:
-    return list(map(self.__extract_name, self.__full_entity["credits"]["cast"]))
+  def get_genres(self) -> list:
+    return list(map(self.__extract_name, self.__full_entity["genres"]))
 
   def get_keywords(self) -> list:
     return list(
