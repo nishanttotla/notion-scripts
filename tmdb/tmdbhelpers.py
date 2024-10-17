@@ -25,7 +25,7 @@ class TmdbEntity():
     if not self.__force_update_cache:
       cached_full_entity = cache.get(self.__imdb_id)
 
-      # If a cached entity is found, use that to avoid the RPC
+      # If a cached entity is found, use that to avoid multiple (5) RPCs
       if cached_full_entity:
         pprint("--------------------------------------")
         pprint("Fetched CACHED TMDB entity successfuly for IMDB ID: " +
@@ -48,21 +48,20 @@ class TmdbEntity():
         show_result = search_result["tv_results"][0]
         self.__tmdb_id = show_result["id"]
 
-    # The TMDB API will append all seasons to the output and skip the ones that aren't
-    # present so just request up to 20 seasons. I'm hard press to think of a show
-    # that would have more, and that I'd even bother much about them. Still, it's
-    # something that can be adjusted for special cases later.
-    # See https://en.wikipedia.org/wiki/List_of_longest-running_scripted_American_primetime_television_series
+    # Create a fetcher that will be used to call multiple endpoints
+    fetcher = tmdb.TV(self.__tmdb_id)
+
     append_seasons = ""
     for season_number in range(1, kMaxSupportedSeasons):
       append_seasons = append_seasons + self.__season_key(season_number) + ","
     append_seasons = append_seasons + self.__season_key(kMaxSupportedSeasons)
 
-    pprint(append_seasons)
+    self.__full_entity = fetcher.info(append_to_response=append_seasons)
+    self.__full_entity["credits"] = fetcher.credits()
+    self.__full_entity["content_ratings"] = fetcher.content_ratings()
+    self.__full_entity["keywords"] = fetcher.keywords()
 
-    self.__full_entity = tmdb.TV(
-        self.__tmdb_id).info(append_to_response=append_seasons)
-    # TODO: How to check if the response is bad?
+    # TODO: How to check if the responses are bad?
 
     # Cache value for 60 days (60*86400 seconds)
     cache.set(self.__imdb_id, self.__full_entity, expire=5184000)
