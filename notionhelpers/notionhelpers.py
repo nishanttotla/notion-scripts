@@ -6,7 +6,7 @@ import requests
 
 
 class ColumnType(Enum):
-  TEXT = 0
+  RICH_TEXT = 0
   DATE = 1
   NUMBER = 2
   SELECT = 3
@@ -86,7 +86,7 @@ class NotionRow():
                    title: str = "",
                    relation_db: str = ""):
     """Create new field given type, name, value, and optional fields that specify configurations. Field should not exist."""
-    if col_type == ColumnType.TEXT:
+    if col_type == ColumnType.RICH_TEXT:
       self.__create_text_field_internal(name, value)
     elif col_type == ColumnType.TITLE:
       self.__create_title_field_internal(name, value)
@@ -130,7 +130,7 @@ class NotionRow():
       update_config: NotionRowUpdateConfig = NotionRowUpdateConfig.REPLACE,
       relation_db: str = ""):
     """Update value of field given type, name, value, and optional fields that specify configurations. Field must exist."""
-    if col_type == ColumnType.TEXT:
+    if col_type == ColumnType.RICH_TEXT:
       self.__update_text_value_internal(name, value, update_config)
     elif col_type == ColumnType.DATE:
       self.__update_date_value_internal(name, value)
@@ -235,9 +235,15 @@ class NotionRow():
 
   ############################# Clearing Functions #############################
 
+  def clear_row(self):
+    """Clear every field value."""
+    for name in self.__properties:
+      col_type = ColumnType[self.__properties[name]["type"].upper()]
+      self.clear_value(col_type, name)
+
   def clear_value(self, col_type: ColumnType, name: str):
     """Clear field value by type and name. Field must exist."""
-    if col_type == ColumnType.TEXT:
+    if col_type == ColumnType.RICH_TEXT:
       self.__clear_text_value_internal(name)
     elif col_type == ColumnType.DATE:
       self.__clear_date_value_internal(name)
@@ -251,6 +257,10 @@ class NotionRow():
       self.__clear_file_value_internal(name)
     elif col_type == ColumnType.FORMULA:
       self.__clear_formula_value_internal(name)
+    elif col_type == ColumnType.RELATION:
+      self.__clear_relation_value_internal(name)
+    elif col_type == ColumnType.TITLE:
+      self.__clear_title_value_internal(name)
     else:
       raise NotImplementedError("No clear_value implementation yet for type: " +
                                 type.name)
@@ -281,6 +291,14 @@ class NotionRow():
 
   def __clear_formula_value_internal(self, name: str):
     self.__properties[name].pop("formula", None)
+    self.__pending_update[name] = self.__properties[name]
+
+  def __clear_relation_value_internal(self, name: str):
+    self.__properties[name]["relation"] = []
+    self.__pending_update[name] = self.__properties[name]
+
+  def __clear_title_value_internal(self, name: str):
+    self.__properties[name]["title"] = []
     self.__pending_update[name] = self.__properties[name]
 
   ############################## DB Call Functions #############################
