@@ -6,6 +6,7 @@ import requests
 import tmdbsimple as tmdb
 
 kMaxSupportedSeasons = 20
+kDefaultContentRatingCountryCode = "US"
 
 
 @dataclass
@@ -69,6 +70,8 @@ class TmdbEntity():
     pprint("Fetched TMDB entity successfuly for IMDB ID: " + self.__imdb_id)
 
   ############################ Show Getter Functions ###########################
+  def __extract_name(self, d: dict):
+    return d["name"]
 
   def get_backdrop_path_url(self) -> str:
     return "https://image.tmdb.org/t/p/w780" + self.__full_entity["backdrop_path"]
@@ -88,23 +91,25 @@ class TmdbEntity():
   def get_status(self) -> str:
     return self.__full_entity["status"]
 
-  def get_status(self) -> str:
+  def get_type(self) -> str:
     return self.__full_entity["type"]
 
   def get_release_date(self) -> str:
     return self.__full_entity["first_air_date"]
 
-  def get_tmdb_rating(self) -> float:
-    return self.__full_entity["vote_average"]
-
-  def get_content_ratings(self):
-    raise NotImplementedError("get_content_ratings is not implemented yet")
+  def get_content_rating(self,
+                         country_code: str = kDefaultContentRatingCountryCode
+                         ) -> str:
+    default_code = ""
+    for result in self.__full_entity["content_ratings"]["results"]:
+      if result["iso_3166_1"] == country_code:
+        return result["rating"]
+      if result["iso_3166_1"] == kDefaultContentRatingCountryCode:
+        default_code = result["rating"]
+    return default_code
 
   def get_genres(self) -> list:
-    def extract_name(g):
-      return g["name"]
-
-    return list(map(extract_name, self.__full_entity["genres"]))
+    return list(map(self.__extract_name, self.__full_entity["genres"]))
 
   def get_languages(self) -> list:
     def extract_language(g):
@@ -113,25 +118,28 @@ class TmdbEntity():
     return list(map(extract_language, self.__full_entity["spoken_languages"]))
 
   def get_production_companies(self) -> list:
-    def extract_name(g):
-      return g["name"]
-
-    return list(map(extract_name, self.__full_entity["production_companies"]))
+    return list(
+        map(self.__extract_name, self.__full_entity["production_companies"]))
 
   def get_countries(self) -> list:
-    def extract_name(g):
-      return g["name"]
-
-    return list(map(extract_name, self.__full_entity["production_countries"]))
+    return list(
+        map(self.__extract_name, self.__full_entity["production_countries"]))
 
   def get_creators(self) -> list:
-    def extract_name(g):
-      return g["name"]
+    return list(map(self.__extract_name, self.__full_entity["created_by"]))
 
-    return list(map(extract_name, self.__full_entity["created_by"]))
+  def get_cast(self) -> list:
+    return list(map(self.__extract_name, self.__full_entity["credits"]["cast"]))
+
+  def get_keywords(self) -> list:
+    return list(
+        map(self.__extract_name, self.__full_entity["keywords"]["results"]))
 
   def get_number_of_seasons(self) -> int:
     return self.__full_entity["number_of_seasons"]
+
+  def get_tmdb_rating(self) -> float:
+    return self.__full_entity["vote_average"]
 
   ########################### Season Getter Functions ##########################
 
@@ -166,6 +174,3 @@ class TmdbEntity():
       runtime = runtime + (0 if
                            (episode["runtime"] == None) else episode["runtime"])
     return runtime
-
-  def get_season_credits_with_counts(self, season_number: int) -> dict:
-    return {}
