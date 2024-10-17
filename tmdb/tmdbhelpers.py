@@ -5,6 +5,8 @@ from pprint import pprint
 import requests
 import tmdbsimple as tmdb
 
+kMaxSupportedSeasons = 20
+
 
 @dataclass
 class TmdbEntity():
@@ -19,8 +21,8 @@ class TmdbEntity():
     self.__full_entity = {}
     self.__force_update_cache = force_update_cache
 
+    cache = Cache("./tmdbcache")
     if not self.__force_update_cache:
-      cache = Cache("./tmdbcache")
       cached_full_entity = cache.get(self.__imdb_id)
 
       # If a cached entity is found, use that to avoid the RPC
@@ -51,7 +53,13 @@ class TmdbEntity():
     # that would have more, and that I'd even bother much about them. Still, it's
     # something that can be adjusted for special cases later.
     # See https://en.wikipedia.org/wiki/List_of_longest-running_scripted_American_primetime_television_series
-    append_seasons = "season/1,season/2,season/3,season/4,season/5,season/6,season/7,season/8,season/9,season/10,season/11,season/12,season/13,season/14,season/15,season/16,season/17,season/18,season/19,season/20"
+    append_seasons = ""
+    for season_number in range(1, kMaxSupportedSeasons):
+      append_seasons = append_seasons + self.__season_key(season_number) + ","
+    append_seasons = append_seasons + self.__season_key(kMaxSupportedSeasons)
+
+    pprint(append_seasons)
+
     self.__full_entity = tmdb.TV(
         self.__tmdb_id).info(append_to_response=append_seasons)
     # TODO: How to check if the response is bad?
@@ -61,7 +69,7 @@ class TmdbEntity():
     pprint("--------------------------------------")
     pprint("Fetched TMDB entity successfuly for IMDB ID: " + self.__imdb_id)
 
-  ############################## Getter Functions ##############################
+  ############################ Show Getter Functions ###########################
 
   def get_backdrop_path_url(self) -> str:
     return "https://image.tmdb.org/t/p/w780" + self.__full_entity["backdrop_path"]
@@ -125,3 +133,40 @@ class TmdbEntity():
 
   def get_number_of_seasons(self) -> int:
     return self.__full_entity["number_of_seasons"]
+
+  ########################### Season Getter Functions ##########################
+
+  def __season_key(self, season_number: int) -> str:
+    return "season/" + str(season_number)
+
+  def __validate_season_number(self, season_number: int):
+    if season_number < 1 or season_number > kMaxSupportedSeasons:
+      raise ValueError("Accessing out of range season number: " +
+                       str(season_number) + " for IMDB ID: " + self.__imdb_id)
+    if season_number > self.__full_entity["number_of_seasons"]:
+      raise ValueError("Accessing non-existent season number: " +
+                       str(season_number) + " for IMDB ID: " + self.__imdb_id)
+    if not self.__season_key(season_number) in self.__full_entity:
+      raise ValueError("Accessing unavailable season number: " +
+                       str(season_number) + " for IMDB ID: " + self.__imdb_id)
+
+  def get_season_air_date(self, season_number: int) -> str:
+    self.__validate_season_number(season_number)
+    return self.__full_entity[self.__season_key(season_number)]["air_date"]
+
+  def get_season_number_of_episodes(self, season_number: int) -> str:
+    self.__validate_season_number(season_number)
+    return len(self.__full_entity[self.__season_key(season_number)]["episodes"])
+
+  def get_season_runtime_mins(self, season_number: int) -> int:
+    self.__validate_season_number(season_number)
+
+    runtime = 0
+    for episode in self.__full_entity[self.__season_key(
+        season_number)]["episodes"]:
+      runtime = runtime + (0 if
+                           (episode["runtime"] == None) else episode["runtime"])
+    return runtime
+
+  def get_season_credits_with_counts(self, season_number: int) -> dict:
+    return {}
