@@ -132,7 +132,7 @@ for result in seasons_db["results"]:
   season_index = notion_row.get_value(ColumnType.TITLE, "Season Index")[0]
   imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index] = notion_row
 
-imdb_id = 'tt11704040'
+imdb_id = 'tt0106179'
 
 update_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
                        imdb_to_show[imdb_id]["tmdb_entity"])
