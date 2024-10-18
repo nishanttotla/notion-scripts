@@ -233,6 +233,7 @@ class NotionRow():
   def __update_text_value_internal(self, name: str, value: str,
                                    update_config: NotionRowUpdateConfig):
     # TODO: Implement ability to append text instead of replacing it.
+    # TODO: Don't update when there are no changes!
     self.__properties[name]["rich_text"] = [{
         "plain_text": value,
         "text": {
@@ -279,13 +280,14 @@ class NotionRow():
 
     # TODO: Implement ability to perform a union of the current and new lists
     # and also figure out how to pass it in every function call
+    # TODO: Don't update when there are no changes!
     self.__properties[name]["multi_select"] = list_tagged
     self.__pending_update[name] = self.__properties[name]
 
   def __update_file_value_internal(self, name: str, value: str, title: str,
                                    update_config: NotionRowUpdateConfig):
     # TODO: Implement ability to append file instead of replacing it.
-
+    # TODO: Don't update when there are no changes!
     if not title:
       title = "Unnamed file"
     self.__properties[name]["files"] = [{
@@ -417,7 +419,6 @@ class NotionRow():
 
   def update_db_row(self):
     """Update the page with the current properties."""
-    pprint(self.__pending_update)
     if not self.__row_id:
       raise ValueError("Row ID not found for row")
 

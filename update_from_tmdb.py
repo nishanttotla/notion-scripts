@@ -91,7 +91,7 @@ def create_season_notion_row(show_id: str, season_number: int,
   season.create_field(ColumnType.TITLE, "Season Index", title)
   season.create_field(ColumnType.RELATION, "Show", [show_id])
   # TODO: create other fields, will need notion functions
-  season.create_new_db_row(os.environ["SHOWS_DB"],
+  season.create_new_db_row(os.environ["SEASONS_DB"],
                            icon={
                                "type": "external",
                                "external": {
