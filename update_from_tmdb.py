@@ -18,7 +18,7 @@ from tmdbhelpers import TmdbEntity
 from pprint import pprint
 
 # TODO: Maybe we need multiple clients for better bandwidth?
-notion = Client(auth=fos.environ["NOTION_TOKEN"])
+notion = Client(auth=os.environ["NOTION_TOKEN"])
 shows_db = notion_database_query_all(notion, os.environ["SHOWS_DB"])
 seasons_db = notion_database_query_all(notion, os.environ["SEASONS_DB"])
 
@@ -67,6 +67,8 @@ def update_season_notion_row(show_id: str, season: NotionRow, tmdb: TmdbEntity):
                       relation_db=shows_db)
   season.update_value(ColumnType.DATE, "Air Date",
                       tmdb.get_season_air_date(season_number))
+  season.update_value(ColumnType.RICH_TEXT, "Overview",
+                      tmdb.get_season_overview(season_number))
   season.update_value(ColumnType.NUMBER, "Number of Episodes",
                       tmdb.get_season_number_of_episodes(season_number))
   season.update_value(ColumnType.NUMBER, "Total Runtime (mins)",
@@ -112,7 +114,7 @@ for result in seasons_db["results"]:
   season_index = notion_row.get_value(ColumnType.TITLE, "Season Index")[0]
   imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index] = notion_row
 
-imdb_id = 'tt12345678'
+imdb_id = 'tt11704040'
 
 update_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
                        imdb_to_show[imdb_id]["tmdb_entity"])

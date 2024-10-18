@@ -80,21 +80,21 @@ class NotionRow():
   def get_value(self, col_type: ColumnType, name: str):
     """Get value of field given type and name. Field must exist."""
     if col_type == ColumnType.RICH_TEXT:
-      self.__get_text_value_internal(name)
+      return self.__get_text_value_internal(name)
     elif col_type == ColumnType.TITLE:
-      self.__get_title_value_internal(name)
+      return self.__get_title_value_internal(name)
     elif col_type == ColumnType.DATE:
-      self.__get_date_value_internal(name)
+      return self.__get_date_value_internal(name)
     elif col_type == ColumnType.NUMBER:
-      self.__get_number_value_internal(name)
+      return self.__get_number_value_internal(name)
     elif col_type == ColumnType.SELECT:
-      self.__get_select_value_internal(name)
+      return self.__get_select_value_internal(name)
     elif col_type == ColumnType.MULTI_SELECT:
-      self.__get_multi_select_value_internal(name)
+      return self.__get_multi_select_value_internal(name)
     elif col_type == ColumnType.FILES:
-      self.__get_file_value_internal(name)
+      return self.__get_file_value_internal(name)
     elif col_type == ColumnType.RELATION:
-      self.__get_relation_value_internal(name)
+      return self.__get_relation_value_internal(name)
     else:
       raise NotImplementedError("No get_value implementation yet for type: " +
                                 type.name)
