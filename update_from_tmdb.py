@@ -59,7 +59,7 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
 
 
 def update_season_notion_row(show_id: str, season: NotionRow, tmdb: TmdbEntity):
-  title = season.get_value(ColumnType.TITLE, "Season Index")
+  title = season.get_value(ColumnType.TITLE, "Season Index")[0]
   season_number = title.split(" ")[1]  # title looks like "Season 3"
 
   season.update_value(ColumnType.RELATION,
@@ -81,7 +81,8 @@ def create_season_notion_row(show_id: str, season_number: int,
 
   season.create_field(ColumnType.TITLE, "Season Index",
                       "Season " + str(season_number))
-  update_season_notion_row(show_id, season, tmdb)
+  season.create_field(ColumnType.RELATION, "Show", show_id)
+  # TODO: create other fields, will need notion functions
 
 
 # We assume that all shows which are desired are added to the shows DB,
@@ -90,6 +91,7 @@ def create_season_notion_row(show_id: str, season_number: int,
 # Otherwise nothing will work.
 # TODO: Make this work with only IMDB ID
 imdb_to_show = {}
+show_id_to_imdb = {}
 for result in shows_db["results"]:
   notion_row = NotionRow(result["id"], result["properties"])
   notion_row.set_client(notion)
@@ -100,12 +102,28 @@ for result in shows_db["results"]:
       "tmdb_entity": tmdb_entity,
       "seasons_db_notion_rows": {}
   }
+  show_id_to_imdb[notion_row.get_id()] = imdb_id
 
 for result in seasons_db["results"]:
   notion_row = NotionRow(result["id"], result["properties"])
   notion_row.set_client(notion)
-  imdb_id = ""  # TODO get it somehow
-  seasons_index = ""  # TODO get title
+  imdb_id = show_id_to_imdb[notion_row.get_value(ColumnType.RELATION,
+                                                 "Show")[0]]
+  season_index = notion_row.get_value(ColumnType.TITLE, "Season Index")[0]
   imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index] = notion_row
 
-test_imdb_id = 'tt12345678'
+imdb_id = 'tt12345678'
+
+update_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
+                       imdb_to_show[imdb_id]["tmdb_entity"])
+show_id = imdb_to_show[imdb_id]["notion_row"].get_id()
+
+num_seasons = imdb_to_show[imdb_id]["tmdb_entity"].get_number_of_seasons()
+for s in range(1, num_seasons + 1):
+  season_index = "Season " + s
+  if season_index in imdb_to_show[imdb_id]["seasons_db_notion_rows"]:
+    update_season_notion_row(
+        show_id, imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index],
+        imdb_to_show[imdb_id]["tmdb_entity"])
+  else:
+    create_season_notion_row(show_id, s, imdb_to_show[imdb_id]["tmdb_entity"])

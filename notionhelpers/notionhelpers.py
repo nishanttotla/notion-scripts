@@ -161,6 +161,8 @@ class NotionRow():
       self.__create_text_field_internal(name, value)
     elif col_type == ColumnType.TITLE:
       self.__create_title_field_internal(name, value)
+    elif col_type == ColumnType.RELATION:
+      self.__create_relation_field_internal(name, value)
     else:
       raise NotImplementedError("No create_field implementation yet for type: " +
                                 type.name)
@@ -183,6 +185,14 @@ class NotionRow():
             "content": value
         }
     }]
+    self.__pending_update[name] = self.__properties[name]
+
+  def __create_relation_field_internal(self, name: str, value: list):
+    self.__properties[name] = {"type": "relation", has_more: False}
+    list_tagged = []
+    for item in value:
+      list_tagged.append({"id": item})
+    self.__properties[name]["relation"] = list_tagged
     self.__pending_update[name] = self.__properties[name]
 
   ############################## Setter Functions ##############################

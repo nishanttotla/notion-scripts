@@ -166,13 +166,6 @@ class TmdbEntity():
       raise ValueError("Accessing unavailable season number: " +
                        str(season_number) + " for IMDB ID: " + self.__imdb_id)
 
-  def get_seasons_list(self) -> list:
-    available_seasons = []
-    for season_number in range(1, kMaxSupportedSeasons + 1):
-      if self.__season_key(season_number) in self.__full_entity:
-        available_seasons.append("Season " + season_number)
-    return available_seasons
-
   def get_season_air_date(self, season_number: int) -> str:
     self.__validate_season_number(season_number)
     return self.__full_entity[self.__season_key(season_number)]["air_date"]
