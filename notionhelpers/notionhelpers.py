@@ -81,6 +81,8 @@ class NotionRow():
     """Get value of field given type and name. Field must exist."""
     if col_type == ColumnType.RICH_TEXT:
       self.__get_text_value_internal(name)
+    elif col_type == ColumnType.TITLE:
+      self.__get_title_value_internal(name)
     elif col_type == ColumnType.DATE:
       self.__get_date_value_internal(name)
     elif col_type == ColumnType.NUMBER:
@@ -100,6 +102,12 @@ class NotionRow():
   def __get_text_value_internal(self, name: str):
     value_list = []
     for rt in self.__properties[name]["rich_text"]:
+      value_list.append(rt["plain_text"])
+    return value_list
+
+  def __get_title_value_internal(self, name: str):
+    value_list = []
+    for rt in self.__properties[name]["title"]:
       value_list.append(rt["plain_text"])
     return value_list
 
