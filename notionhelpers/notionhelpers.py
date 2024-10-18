@@ -188,7 +188,7 @@ class NotionRow():
     self.__pending_update[name] = self.__properties[name]
 
   def __create_relation_field_internal(self, name: str, value: list):
-    self.__properties[name] = {"type": "relation", has_more: False}
+    self.__properties[name] = {"type": "relation", "has_more": False}
     list_tagged = []
     for item in value:
       list_tagged.append({"id": item})
@@ -385,8 +385,9 @@ class NotionRow():
 
   ############################## DB Call Functions #############################
 
-  def create_new_db_row(self, database_id: str) -> bool:
+  def create_new_db_row(self, database_id: str, icon: dict = {}) -> bool:
     """Create a new page with the current properties in the provided database_id."""
+    pprint(self.__pending_update)
     if not database_id:
       raise ValueError("Cannot create row without a database_id")
 
@@ -403,17 +404,20 @@ class NotionRow():
               "parent": {
                   "database_id": database_id
               },
-              "properties": self.__pending_update
+              "properties": self.__pending_update,
+              "icon": icon
           })
       self.__row_id = resp["id"]
       self.__properties = resp["properties"]
       self.__pending_update = {}
+      pprint(">>>> >>>> >>>> Created Notion row successfully")
     except Exception as e:
       pprint("Got exception while adding row for database_id: " + database_id)
       pprint("Exception: " + str(e))
 
   def update_db_row(self):
     """Update the page with the current properties."""
+    pprint(self.__pending_update)
     if not self.__row_id:
       raise ValueError("Row ID not found for row")
 
@@ -426,6 +430,7 @@ class NotionRow():
           "properties": self.__pending_update
       })
       self.__pending_update = {}
+      pprint(">>>> >>>> >>>> Updated Notion row successfully")
     except Exception as e:
       pprint("Got exception while update row for row ID: " + self.__row_id)
       pprint("Exception: " + str(e))

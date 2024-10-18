@@ -28,7 +28,7 @@ class TmdbEntity():
 
       # If a cached entity is found, use that to avoid multiple (5) RPCs
       if cached_full_entity:
-        pprint("--------------------------------------")
+        pprint("--------------------------------------------------------------")
         pprint("Fetched CACHED TMDB entity successfuly for IMDB ID: " +
                self.__imdb_id + " with TMDB ID: " +
                str(cached_full_entity["id"]))

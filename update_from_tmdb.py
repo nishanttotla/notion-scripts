@@ -24,12 +24,14 @@ seasons_db = notion_database_query_all(notion, os.environ["SEASONS_DB"])
 
 
 def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
+  pprint(">>>> Updating Notion row for show with IMDB ID: " +
+         tmdb.get_imdb_id())
   show.update_value(ColumnType.RICH_TEXT, "Original Title",
                     tmdb.get_original_title())
   show.update_value(ColumnType.RICH_TEXT, "Tagline", tmdb.get_tagline())
   show.update_value(ColumnType.RICH_TEXT, "Plot", tmdb.get_plot())
 
-  show.update_value(ColumnType.FILE,
+  show.update_value(ColumnType.FILES,
                     "Backdrop",
                     tmdb.get_backdrop_path_url(),
                     title=tmdb.get_title())
@@ -60,8 +62,10 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
 
 def update_season_notion_row(show_id: str, season: NotionRow, tmdb: TmdbEntity):
   title = season.get_value(ColumnType.TITLE, "Season Index")[0]
-  season_number = title.split(" ")[1]  # title looks like "Season 3"
+  season_number = int(title.split(" ")[1])  # title looks like "Season 3"
 
+  pprint(">> Updating Notion row for " + title + " for IMDB ID: " +
+         tmdb.get_imdb_id())
   season.update_value(ColumnType.RELATION,
                       "Show", [show_id],
                       relation_db=shows_db)
@@ -80,11 +84,21 @@ def create_season_notion_row(show_id: str, season_number: int,
                              tmdb: TmdbEntity):
   season = NotionRow("", {})
   season.set_client(notion)
+  title = "Season " + str(season_number)
 
-  season.create_field(ColumnType.TITLE, "Season Index",
-                      "Season " + str(season_number))
-  season.create_field(ColumnType.RELATION, "Show", show_id)
+  pprint(">> Creating Notion row for " + title + " for IMDB ID: " +
+         tmdb.get_imdb_id())
+  season.create_field(ColumnType.TITLE, "Season Index", title)
+  season.create_field(ColumnType.RELATION, "Show", [show_id])
   # TODO: create other fields, will need notion functions
+  season.create_new_db_row(os.environ["SHOWS_DB"],
+                           icon={
+                               "type": "external",
+                               "external": {
+                                   "url":
+                                   "https://www.notion.so/icons/view_green.svg"
+                               }
+                           })
 
 
 # We assume that all shows which are desired are added to the shows DB,
@@ -98,7 +112,11 @@ for result in shows_db["results"]:
   notion_row = NotionRow(result["id"], result["properties"])
   notion_row.set_client(notion)
   imdb_id = notion_row.get_value(ColumnType.RICH_TEXT, "IMDB ID")[0]
-  tmdb_entity = TmdbEntity(imdb_id)
+  try:
+    tmdb_entity = TmdbEntity(imdb_id)
+  except Exception as e:
+    pprint("Could not fetch TMDB Entity for IMDB ID: " + imdb_id)
+    pprint("Exception: " + str(e))
   imdb_to_show[imdb_id] = {
       "notion_row": notion_row,
       "tmdb_entity": tmdb_entity,
@@ -122,7 +140,7 @@ show_id = imdb_to_show[imdb_id]["notion_row"].get_id()
 
 num_seasons = imdb_to_show[imdb_id]["tmdb_entity"].get_number_of_seasons()
 for s in range(1, num_seasons + 1):
-  season_index = "Season " + s
+  season_index = "Season " + str(s)
   if season_index in imdb_to_show[imdb_id]["seasons_db_notion_rows"]:
     update_season_notion_row(
         show_id, imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index],
