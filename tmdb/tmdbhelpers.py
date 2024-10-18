@@ -170,7 +170,11 @@ class TmdbEntity():
     self.__validate_season_number(season_number)
     return self.__full_entity[self.__season_key(season_number)]["air_date"]
 
-  def get_season_number_of_episodes(self, season_number: int) -> str:
+  def get_season_overview(self, season_number: int) -> str:
+    self.__validate_season_number(season_number)
+    return self.__full_entity[self.__season_key(season_number)]["overview"]
+
+  def get_season_number_of_episodes(self, season_number: int) -> int:
     self.__validate_season_number(season_number)
     return len(self.__full_entity[self.__season_key(season_number)]["episodes"])
 
