@@ -167,14 +167,12 @@ class NotionRow():
       raise NotImplementedError("No create_field implementation yet for type: " +
                                 type.name)
 
-  def __create_text_field_internal(self, name: str, value: str):
+  def __create_text_field_internal(self, name: str, value: list):
     self.__properties[name] = {"type": "rich_text"}
-    self.__properties[name]["rich_text"] = [{
-        "plain_text": value,
-        "text": {
-            "content": value
-        }
-    }]
+    list_tagged = []
+    for item in value:
+      list_tagged.append({"plain_text": item, "text": {"content": item}})
+    self.__properties[name]["rich_text"] = list_tagged
     self.__pending_update[name] = self.__properties[name]
 
   def __create_title_field_internal(self, name: str, value: str):

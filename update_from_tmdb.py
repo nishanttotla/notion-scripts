@@ -17,10 +17,19 @@ from notionhelpers import NotionRow
 from tmdbhelpers import TmdbEntity
 from pprint import pprint
 
+# THIS CODE MUST BE IDEMPOTENT !!!
+
 # TODO: Maybe we need multiple clients for better bandwidth?
 notion = Client(auth=os.environ["NOTION_TOKEN"])
 shows_db = notion_database_query_all(notion, os.environ["SHOWS_DB"])
 seasons_db = notion_database_query_all(notion, os.environ["SEASONS_DB"])
+
+
+def sanitize_keywords(keywords: list) -> list:
+  sanitized_keywords = []
+  for w in keywords:
+    sanitized_keywords.extend(w.split(","))
+  return sanitized_keywords
 
 
 def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
@@ -51,7 +60,8 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
   show.update_value(ColumnType.MULTI_SELECT, "Countries", tmdb.get_countries())
   show.update_value(ColumnType.MULTI_SELECT, "Languages", tmdb.get_languages())
   show.update_value(ColumnType.MULTI_SELECT, "Genres", tmdb.get_genres())
-  show.update_value(ColumnType.MULTI_SELECT, "Keywords", tmdb.get_keywords())
+  show.update_value(ColumnType.MULTI_SELECT, "Keywords",
+                    sanitize_keywords(tmdb.get_keywords()))
 
   show.update_value(ColumnType.NUMBER, "Number of Seasons",
                     tmdb.get_number_of_seasons())
@@ -69,8 +79,10 @@ def update_season_notion_row(show_id: str, season: NotionRow, tmdb: TmdbEntity):
   season.update_value(ColumnType.RELATION,
                       "Show", [show_id],
                       relation_db=shows_db)
-  season.update_value(ColumnType.DATE, "Air Date",
-                      tmdb.get_season_air_date(season_number))
+  season_air_date = tmdb.get_season_air_date(season_number)
+  if season_air_date != None:
+    season.update_value(ColumnType.DATE, "Air Date",
+                        tmdb.get_season_air_date(season_number))
   season.update_value(ColumnType.RICH_TEXT, "Overview",
                       tmdb.get_season_overview(season_number))
   season.update_value(ColumnType.NUMBER, "Number of Episodes",
@@ -90,6 +102,8 @@ def create_season_notion_row(show_id: str, season_number: int,
          tmdb.get_imdb_id())
   season.create_field(ColumnType.TITLE, "Season Index", title)
   season.create_field(ColumnType.RELATION, "Show", [show_id])
+  season.create_field(ColumnType.RICH_TEXT, "Overview",
+                      [tmdb.get_season_overview(season_number)])
   # TODO: create other fields, will need notion functions
   season.create_new_db_row(os.environ["SEASONS_DB"],
                            icon={
@@ -132,18 +146,21 @@ for result in seasons_db["results"]:
   season_index = notion_row.get_value(ColumnType.TITLE, "Season Index")[0]
   imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index] = notion_row
 
-imdb_id = 'tt0106179'
+for imdb_id in imdb_to_show:
+  if imdb_to_show[imdb_id]["tmdb_entity"] == {}:
+    continue
 
-update_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
-                       imdb_to_show[imdb_id]["tmdb_entity"])
-show_id = imdb_to_show[imdb_id]["notion_row"].get_id()
+  update_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
+                         imdb_to_show[imdb_id]["tmdb_entity"])
+  show_id = imdb_to_show[imdb_id]["notion_row"].get_id()
 
-num_seasons = imdb_to_show[imdb_id]["tmdb_entity"].get_number_of_seasons()
-for s in range(1, num_seasons + 1):
-  season_index = "Season " + str(s)
-  if season_index in imdb_to_show[imdb_id]["seasons_db_notion_rows"]:
-    update_season_notion_row(
-        show_id, imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index],
-        imdb_to_show[imdb_id]["tmdb_entity"])
-  else:
-    create_season_notion_row(show_id, s, imdb_to_show[imdb_id]["tmdb_entity"])
+  num_seasons = imdb_to_show[imdb_id]["tmdb_entity"].get_number_of_seasons()
+  for s in range(1, num_seasons + 1):
+    season_index = "Season " + str(s)
+    if season_index in imdb_to_show[imdb_id]["seasons_db_notion_rows"]:
+      update_season_notion_row(
+          show_id,
+          imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index],
+          imdb_to_show[imdb_id]["tmdb_entity"])
+    else:
+      create_season_notion_row(show_id, s, imdb_to_show[imdb_id]["tmdb_entity"])
