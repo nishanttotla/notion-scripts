@@ -92,6 +92,8 @@ class TmdbEntity():
     return self.__full_entity["overview"]
 
   def get_backdrop_path_url(self) -> str:
+    if self.__full_entity["backdrop_path"] == None:
+      return ""
     return "https://image.tmdb.org/t/p/w780" + self.__full_entity["backdrop_path"]
 
   def get_release_date(self) -> str:

@@ -40,17 +40,20 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
   show.update_value(ColumnType.RICH_TEXT, "Tagline", tmdb.get_tagline())
   show.update_value(ColumnType.RICH_TEXT, "Plot", tmdb.get_plot())
 
-  show.update_value(ColumnType.FILES,
-                    "Backdrop",
-                    tmdb.get_backdrop_path_url(),
-                    title=tmdb.get_title())
+  if tmdb.get_backdrop_path_url():
+    show.update_value(ColumnType.FILES,
+                      "Backdrop",
+                      tmdb.get_backdrop_path_url(),
+                      title=tmdb.get_title())
 
   show.update_value(ColumnType.DATE, "Release Date", tmdb.get_release_date())
 
   show.update_value(ColumnType.SELECT, "Status", tmdb.get_status())
   show.update_value(ColumnType.SELECT, "Type", tmdb.get_type())
-  show.update_value(ColumnType.SELECT, "Content Rating (US)",
-                    tmdb.get_content_rating())
+
+  if tmdb.get_content_rating():
+    show.update_value(ColumnType.SELECT, "Content Rating (US)",
+                      tmdb.get_content_rating())
 
   show.update_value(ColumnType.MULTI_SELECT, "Cast", tmdb.get_cast())
   show.update_value(ColumnType.MULTI_SELECT, "Creators", tmdb.get_creators())
@@ -120,6 +123,7 @@ def create_season_notion_row(show_id: str, season_number: int,
 # Assume IMDB ID and title are populated in the original show row.
 # Otherwise nothing will work.
 # TODO: Make this work with only IMDB ID
+# Pre-process shows
 imdb_to_show = {}
 show_id_to_imdb = {}
 for result in shows_db["results"]:
@@ -138,6 +142,7 @@ for result in shows_db["results"]:
   }
   show_id_to_imdb[notion_row.get_id()] = imdb_id
 
+# Pre-process seasons
 for result in seasons_db["results"]:
   notion_row = NotionRow(result["id"], result["properties"])
   notion_row.set_client(notion)
@@ -146,7 +151,9 @@ for result in seasons_db["results"]:
   season_index = notion_row.get_value(ColumnType.TITLE, "Season Index")[0]
   imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index] = notion_row
 
-for imdb_id in imdb_to_show:
+# Update everything.
+subset = ["tt11581534"]
+for imdb_id in subset:
   if imdb_to_show[imdb_id]["tmdb_entity"] == {}:
     continue
 
