@@ -69,7 +69,11 @@ class TmdbEntity():
     pprint("--------------------------------------")
     pprint("Fetched TMDB entity successfuly for IMDB ID: " + self.__imdb_id)
 
+  def print(self):
+    pprint(self.__full_entity)
+
   ############################ Show Getter Functions ###########################
+
   def __extract_name(self, d: dict):
     return d["name"]
 

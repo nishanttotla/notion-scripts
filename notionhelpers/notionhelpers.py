@@ -77,6 +77,10 @@ class NotionRow():
     """Check if the value of the row has been updated since the last commit."""
     return (self.__pending_update == {})
 
+  def print(self):
+    """Print the current version of the row (includes pending updates)."""
+    pprint(self.__properties)
+
   def get_value(self, col_type: ColumnType, name: str):
     """Get value of field given type and name. Field must exist."""
     if col_type == ColumnType.RICH_TEXT:
@@ -387,7 +391,6 @@ class NotionRow():
 
   def create_new_db_row(self, database_id: str, icon: dict = {}) -> bool:
     """Create a new page with the current properties in the provided database_id."""
-    pprint(self.__pending_update)
     if not database_id:
       raise ValueError("Cannot create row without a database_id")
 

@@ -46,7 +46,9 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
                       tmdb.get_backdrop_path_url(),
                       title=tmdb.get_title())
 
-  show.update_value(ColumnType.DATE, "Release Date", tmdb.get_release_date())
+  show_release_date = tmdb.get_release_date()
+  if show_release_date != None:
+    show.update_value(ColumnType.DATE, "Release Date", show_release_date)
 
   show.update_value(ColumnType.SELECT, "Status", tmdb.get_status())
   show.update_value(ColumnType.SELECT, "Type", tmdb.get_type())
@@ -152,11 +154,12 @@ for result in seasons_db["results"]:
   imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index] = notion_row
 
 # Update everything.
-subset = ["tt11581534"]
-for imdb_id in subset:
+subset = ["tt26933824"]
+for imdb_id in imdb_to_show:
   if imdb_to_show[imdb_id]["tmdb_entity"] == {}:
     continue
 
+  imdb_to_show[imdb_id]["tmdb_entity"].print()
   update_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
                          imdb_to_show[imdb_id]["tmdb_entity"])
   show_id = imdb_to_show[imdb_id]["notion_row"].get_id()
