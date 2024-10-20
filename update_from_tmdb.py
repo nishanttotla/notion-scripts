@@ -137,6 +137,7 @@ for result in shows_db["results"]:
   except Exception as e:
     pprint("Could not fetch TMDB Entity for IMDB ID: " + imdb_id)
     pprint("Exception: " + str(e))
+    tmdb_entity = {}
   imdb_to_show[imdb_id] = {
       "notion_row": notion_row,
       "tmdb_entity": tmdb_entity,
@@ -154,7 +155,7 @@ for result in seasons_db["results"]:
   imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index] = notion_row
 
 # Update everything.
-subset = ["tt26933824"]
+subset = ["tt11572080"]
 for imdb_id in imdb_to_show:
   if imdb_to_show[imdb_id]["tmdb_entity"] == {}:
     continue

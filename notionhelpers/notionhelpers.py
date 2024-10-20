@@ -21,6 +21,7 @@ class ColumnType(Enum):
 class NotionRowUpdateConfig(Enum):
   REPLACE = 0
   COMBINE = 1
+  SKIP_FILLED = 2
 
 
 def notion_database_query_all(notion: Client, database_id: str) -> dict:
