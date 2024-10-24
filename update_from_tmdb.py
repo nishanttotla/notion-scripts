@@ -35,6 +35,12 @@ def sanitize_keywords(keywords: list) -> list:
 def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
   pprint(">>>> Updating Notion row for show with IMDB ID: " +
          tmdb.get_imdb_id())
+  import_hint = show.get_value(ColumnType.SELECT, "[IMPORT] Next Import Hint")
+  if import_hint == "Skip" or import_hint == "Fix Source":
+    pprint("Skipping update for IMDB ID: " + imdb_id + " with import_hint=" +
+           import_hint)
+    return
+
   show.update_value(ColumnType.RICH_TEXT, "Original Title",
                     tmdb.get_original_title())
   show.update_value(ColumnType.RICH_TEXT, "Tagline", tmdb.get_tagline())
@@ -72,6 +78,8 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
                     tmdb.get_number_of_seasons())
   show.update_value(ColumnType.NUMBER, "TMDB Rating", tmdb.get_tmdb_rating())
 
+  show.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
+                    datetime.today().strftime('%Y-%m-%d'))
   show.update_db_row()
 
 
@@ -81,6 +89,12 @@ def update_season_notion_row(show_id: str, season: NotionRow, tmdb: TmdbEntity):
 
   pprint(">> Updating Notion row for " + title + " for IMDB ID: " +
          tmdb.get_imdb_id())
+  import_hint = season.get_value(ColumnType.SELECT, "[IMPORT] Next Import Hint")
+  if import_hint == "Skip" or import_hint == "Fix Source":
+    pprint("Skipping update for " + title + " for IMDB ID: " + imdb_id +
+           " with import_hint=" + import_hint)
+    return
+
   season.update_value(ColumnType.RELATION,
                       "Show", [show_id],
                       relation_db=shows_db)
@@ -94,6 +108,9 @@ def update_season_notion_row(show_id: str, season: NotionRow, tmdb: TmdbEntity):
                       tmdb.get_season_number_of_episodes(season_number))
   season.update_value(ColumnType.NUMBER, "Total Runtime (mins)",
                       tmdb.get_season_runtime_mins(season_number))
+
+  season.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
+                      datetime.today().strftime('%Y-%m-%d'))
   season.update_db_row()
 
 
@@ -155,17 +172,10 @@ for result in seasons_db["results"]:
   imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index] = notion_row
 
 # Update everything.
-subset = ["tt4574334"]
+subset = ["tt1312171"]
 for imdb_id in subset:
   if imdb_to_show[imdb_id]["tmdb_entity"] == {}:
     continue
-  import_hint = imdb_to_show[imdb_id]["notion_row"].get_value(
-      ColumnType.SELECT, "[IMPORT] Next Import Hint")
-  if import_hint == "Skip" or import_hint == "Fix Source":
-    pprint("Skipping update IMDB ID: " + imdb_id + " with import_hint=" +
-           import_hint)
-    continue
-
   update_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
                          imdb_to_show[imdb_id]["tmdb_entity"])
   show_id = imdb_to_show[imdb_id]["notion_row"].get_id()
