@@ -155,12 +155,17 @@ for result in seasons_db["results"]:
   imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index] = notion_row
 
 # Update everything.
-subset = ["tt11572080"]
-for imdb_id in imdb_to_show:
+subset = ["tt4574334"]
+for imdb_id in subset:
   if imdb_to_show[imdb_id]["tmdb_entity"] == {}:
     continue
+  import_hint = imdb_to_show[imdb_id]["notion_row"].get_value(
+      ColumnType.SELECT, "[IMPORT] Next Import Hint")
+  if import_hint == "Skip" or import_hint == "Fix Source":
+    pprint("Skipping update IMDB ID: " + imdb_id + " with import_hint=" +
+           import_hint)
+    continue
 
-  imdb_to_show[imdb_id]["tmdb_entity"].print()
   update_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
                          imdb_to_show[imdb_id]["tmdb_entity"])
   show_id = imdb_to_show[imdb_id]["notion_row"].get_id()
