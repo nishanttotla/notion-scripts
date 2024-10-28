@@ -97,7 +97,7 @@ class NotionRow():
     elif col_type == ColumnType.MULTI_SELECT:
       return self.__get_multi_select_value_internal(name)
     elif col_type == ColumnType.FILES:
-      return self.__get_file_value_internal(name)
+      return self.__get_files_value_internal(name)
     elif col_type == ColumnType.RELATION:
       return self.__get_relation_value_internal(name)
     else:
@@ -132,16 +132,12 @@ class NotionRow():
     return self.__properties[name]["select"]["name"]
 
   def __get_multi_select_value_internal(self, name: str):
-    list_tagged = []
-    for item in value:
-      list_tagged.append({"name": item})
+    value_list = []
+    for ms in self.__properties[name]["multi_select"]:
+      value_list.append(ms["name"])
+    return value_list
 
-    # TODO: Implement ability to perform a union of the current and new lists
-    # and also figure out how to pass it in every function call
-    self.__properties[name]["multi_select"] = list_tagged
-    self.__pending_update[name] = self.__properties[name]
-
-  def __get_file_value_internal(self, name: str):
+  def __get_files_value_internal(self, name: str):
     value_list = []
     for f in self.__properties[name]["files"]:
       value_list.append(f["external"]["url"])
