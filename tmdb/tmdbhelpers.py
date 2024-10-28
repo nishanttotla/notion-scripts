@@ -35,8 +35,6 @@ class TmdbEntity():
         self.__full_entity = cached_full_entity
         self.__tmdb_id = cached_full_entity["id"]
         return
-    else:
-      pprint("force_update_cache=True")
 
     tmdb.API_KEY = os.environ["TMDB_API_KEY"]
 
@@ -52,6 +50,7 @@ class TmdbEntity():
     # Create a fetcher that will be used to call multiple endpoints
     fetcher = tmdb.TV(self.__tmdb_id)
 
+    # TODO: Some shows have specials listed as season/0. That needs special handling.
     append_seasons = ""
     for season_number in range(1, kMaxSupportedSeasons):
       append_seasons = append_seasons + self.__season_key(season_number) + ","

@@ -35,11 +35,6 @@ def sanitize_keywords(keywords: list) -> list:
 def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
   pprint(">>>> Updating Notion row for show with IMDB ID: " +
          tmdb.get_imdb_id())
-  import_hint = show.get_value(ColumnType.SELECT, "[IMPORT] Next Import Hint")
-  if import_hint == "Skip" or import_hint == "Fix Source":
-    pprint("Skipping update for IMDB ID: " + imdb_id + " with import_hint=" +
-           import_hint)
-    return
 
   show.update_value(ColumnType.RICH_TEXT, "Original Title",
                     tmdb.get_original_title())
@@ -86,14 +81,8 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
 def update_season_notion_row(show_id: str, season: NotionRow, tmdb: TmdbEntity):
   title = season.get_value(ColumnType.TITLE, "Season Index")[0]
   season_number = int(title.split(" ")[1])  # title looks like "Season 3"
-
   pprint(">> Updating Notion row for " + title + " for IMDB ID: " +
          tmdb.get_imdb_id())
-  import_hint = season.get_value(ColumnType.SELECT, "[IMPORT] Next Import Hint")
-  if import_hint == "Skip" or import_hint == "Fix Source":
-    pprint("Skipping update for " + title + " for IMDB ID: " + imdb_id +
-           " with import_hint=" + import_hint)
-    return
 
   season.update_value(ColumnType.RELATION,
                       "Show", [show_id],
@@ -149,8 +138,13 @@ for result in shows_db["results"]:
   notion_row = NotionRow(result["id"], result["properties"])
   notion_row.set_client(notion)
   imdb_id = notion_row.get_value(ColumnType.RICH_TEXT, "IMDB ID")[0]
+  import_hint = notion_row.get_value(ColumnType.SELECT,
+                                     "[IMPORT] Next Import Hint")
+  cache_update_needed = False
+  if import_hint == "Force Update":
+    cache_update_needed = True
   try:
-    tmdb_entity = TmdbEntity(imdb_id)
+    tmdb_entity = TmdbEntity(imdb_id, force_update_cache=cache_update_needed)
   except Exception as e:
     pprint("Could not fetch TMDB Entity for IMDB ID: " + imdb_id)
     pprint("Exception: " + str(e))
@@ -172,10 +166,16 @@ for result in seasons_db["results"]:
   imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index] = notion_row
 
 # Update everything.
-subset = ["tt1312171"]
-for imdb_id in subset:
+for imdb_id in imdb_to_show:
   if imdb_to_show[imdb_id]["tmdb_entity"] == {}:
     continue
+  import_hint = imdb_to_show[imdb_id]["notion_row"].get_value(
+      ColumnType.SELECT, "[IMPORT] Next Import Hint")
+  if import_hint != "Update" and import_hint != "Force Update":
+    pprint("Skipping update for IMDB ID: " + imdb_id + " with import_hint=" +
+           str(import_hint))
+    continue
+
   update_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
                          imdb_to_show[imdb_id]["tmdb_entity"])
   show_id = imdb_to_show[imdb_id]["notion_row"].get_id()
