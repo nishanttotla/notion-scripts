@@ -38,7 +38,7 @@ class TmdbEntity():
 
     tmdb.API_KEY = os.environ["TMDB_API_KEY"]
 
-    # Fetch tmdb_id if it is still empty
+    # Fetch tmdb_id if it is empty
     if not self.__tmdb_id:
       search_result = tmdb.Find(imdb_id).info(external_source="imdb_id")
       if len(search_result["tv_results"]) == 0:
@@ -47,7 +47,7 @@ class TmdbEntity():
         show_result = search_result["tv_results"][0]
         self.__tmdb_id = show_result["id"]
 
-    # Create a fetcher that will be used to call multiple endpoints
+    # Create a fetcher that will be used to call multiple endpoints.
     fetcher = tmdb.TV(self.__tmdb_id)
 
     # TODO: Some shows have specials listed as season/0. That needs special handling.
