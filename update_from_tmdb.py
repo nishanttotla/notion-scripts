@@ -75,6 +75,8 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
 
   show.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
                     datetime.today().strftime('%Y-%m-%d'))
+  show.update_value(ColumnType.SELECT, "[IMPORT] Next Import Hint",
+                    "Check Status")
   show.update_db_row()
 
 
@@ -124,6 +126,9 @@ def create_season_notion_row(show_id: str, season_number: int,
                                    "https://www.notion.so/icons/view_green.svg"
                                }
                            })
+
+  # Update the row right away to fill in all available data
+  update_season_notion_row(show_id, season, tmdb)
 
 
 # We assume that all shows which are desired are added to the shows DB,

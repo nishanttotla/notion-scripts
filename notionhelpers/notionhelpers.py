@@ -266,7 +266,8 @@ class NotionRow():
       self.__properties[name]["select"] = {"name": value}
       self.__pending_update[name] = self.__properties[name]
     elif self.__properties[name]["select"]["name"] != value:
-      self.__properties[name]["select"]["name"] = value
+      # Only keep "name" in case the field was not empty.
+      self.__properties[name]["select"] = {"name": value}
       self.__pending_update[name] = self.__properties[name]
     else:
       pprint("Update not required for field: " + name)
