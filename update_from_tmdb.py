@@ -99,6 +99,11 @@ def update_season_notion_row(show_id: str, season: NotionRow, tmdb: TmdbEntity):
                       tmdb.get_season_number_of_episodes(season_number))
   season.update_value(ColumnType.NUMBER, "Total Runtime (mins)",
                       tmdb.get_season_runtime_mins(season_number))
+  if tmdb.get_backdrop_path_url():
+    season.update_value(ColumnType.FILES,
+                        "Backdrop",
+                        tmdb.get_backdrop_path_url(),
+                        title=tmdb.get_title() + " " + title)
 
   season.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
                       datetime.today().strftime('%Y-%m-%d'))
