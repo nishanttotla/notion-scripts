@@ -18,6 +18,7 @@ from tmdbhelpers import TmdbEntity
 from pprint import pprint
 
 # THIS CODE MUST BE IDEMPOTENT !!!
+input_imdb_ids = sys.argv[1:]
 
 # TODO: Maybe we need multiple clients for better bandwidth?
 notion = Client(auth=os.environ["NOTION_TOKEN"])
@@ -177,8 +178,14 @@ for result in seasons_db["results"]:
   season_index = notion_row.get_value(ColumnType.TITLE, "Season Index")[0]
   imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index] = notion_row
 
-# Update everything.
-for imdb_id in imdb_to_show:
+# Update requested IMDB IDs or everything.
+update_imdb_ids = []
+if not input_imdb_ids:
+  update_imdb_ids = list(imdb_to_show.keys())
+else:
+  update_imdb_ids = input_imdb_ids
+
+for imdb_id in update_imdb_ids:
   if imdb_to_show[imdb_id]["tmdb_entity"] == {}:
     continue
   import_hint = imdb_to_show[imdb_id]["notion_row"].get_value(
