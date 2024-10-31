@@ -21,7 +21,9 @@ from pprint import pprint
 
 # TODO: Maybe we need multiple clients for better bandwidth?
 notion = Client(auth=os.environ["NOTION_TOKEN"])
+pprint("Fetching all shows...")
 shows_db = notion_database_query_all(notion, os.environ["SHOWS_DB"])
+pprint("Fetching all seasons...")
 seasons_db = notion_database_query_all(notion, os.environ["SEASONS_DB"])
 
 
