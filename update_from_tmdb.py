@@ -76,6 +76,8 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
                     tmdb.get_number_of_seasons())
   show.update_value(ColumnType.NUMBER, "TMDB Rating", tmdb.get_tmdb_rating())
 
+  # TODO: Last Import Date may make more sense if it were the date of the last
+  # force update only
   show.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
                     datetime.today().strftime('%Y-%m-%d'))
   show.update_value(ColumnType.SELECT, "[IMPORT] Next Import Hint",

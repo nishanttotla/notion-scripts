@@ -99,7 +99,7 @@ for result in shows_db["results"]:
   imdb_id = notion_row.get_value(ColumnType.RICH_TEXT, "IMDB ID")[0]
 
   try:
-    tmdb_entity = TmdbEntity(imdb_id, force_update_cache=True)
+    tmdb_entity = TmdbEntity(imdb_id, force_update_cache=False)
   except Exception as e:
     pprint("Could not fetch TMDB Entity for IMDB ID: " + imdb_id)
     pprint("Exception: " + str(e))
