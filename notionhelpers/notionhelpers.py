@@ -434,3 +434,21 @@ class NotionRow():
     except Exception as e:
       pprint("Got exception while update row for row ID: " + self.__row_id)
       pprint("Exception: " + str(e))
+
+  def delete_db_row(self):
+    """Delete the page associated with the current row_id."""
+    if not self.__row_id:
+      raise ValueError("Row ID not found for row")
+
+    try:
+      resp = self.__sync_client.pages.update(**{
+          "page_id": self.__row_id,
+          "archived": True
+      })
+      pprint(">>>> >>>> >>>> Deleted Notion row successfully")
+    except Exception as e:
+      pprint("Got exception while delete row for row ID: " + self.__row_id)
+      pprint("Exception: " + str(e))
+    self.__row_id = ""
+    self.__pending_update = {}
+    self.__properties = {}

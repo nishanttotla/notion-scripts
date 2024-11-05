@@ -79,6 +79,12 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
   show.update_db_row()
 
 
+def delete_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
+  pprint(">>>> Deleting Notion row for show with IMDB ID: " +
+         tmdb.get_imdb_id())
+  show.delete_db_row()
+
+
 # We assume that all shows which are desired are added to the shows DB,
 # even if all seasons aren't present.
 # Assume IMDB ID and title are populated in the original show row.
@@ -112,6 +118,11 @@ else:
 
 for imdb_id in update_imdb_ids:
   if imdb_to_show[imdb_id]["tmdb_entity"] == {}:
+    continue
+  if imdb_to_show[imdb_id]["notion_row"].get_value(ColumnType.RELATION,
+                                                   "Shows DB Reference"):
+    delete_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
+                           imdb_to_show[imdb_id]["tmdb_entity"])
     continue
 
   update_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
