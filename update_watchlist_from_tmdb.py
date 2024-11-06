@@ -110,6 +110,7 @@ for result in shows_db["results"]:
   }
 
 # Update requested IMDB IDs or everything.
+# TODO: Add an error field to rows so that the issue can be printed in Notion
 update_imdb_ids = []
 if not input_imdb_ids:
   update_imdb_ids = list(imdb_to_show.keys())
