@@ -33,16 +33,15 @@ def sanitize_keywords(keywords: list) -> list:
   return sanitized_keywords
 
 
-def update_notion_row_with_error(imdb_id: str, row: NotionRow):
+def update_notion_row_with_error(imdb_id: str, error_msg: str, row_id: str):
   pprint(">>>> Updating Notion row WITH ERRORS for show with IMDB ID: " +
          imdb_id)
-  new_row = NotionRow(row.get_id(), {
+  new_row = NotionRow(row_id, {
       "[IMPORT] Errors": {},
       "[IMPORT] Last Import Date": {}
   })
   new_row.set_client(notion)
-  new_row.update_value(ColumnType.RICH_TEXT, "[IMPORT] Errors",
-                       row.get_update_errors())
+  new_row.update_value(ColumnType.RICH_TEXT, "[IMPORT] Errors", error_msg)
   new_row.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
                        datetime.today().strftime('%Y-%m-%d'))
   new_row.update_db_row()
@@ -93,7 +92,8 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
                     datetime.today().strftime('%Y-%m-%d'))
   show.clear_value(ColumnType.RICH_TEXT, "[IMPORT] Errors")
   if show.update_db_row():
-    update_notion_row_with_error(tmdb.get_imdb_id(), show)
+    update_notion_row_with_error(tmdb.get_imdb_id(), show.get_update_errors(),
+                                 show.get_id())
 
 
 def delete_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
@@ -135,6 +135,9 @@ else:
 
 for imdb_id in update_imdb_ids:
   if imdb_to_show[imdb_id]["tmdb_entity"] == {}:
+    update_notion_row_with_error(imdb_id,
+                                 "No TMDB Entity found for IMDB ID: " + imdb_id,
+                                 imdb_to_show[imdb_id]["notion_row"].get_id())
     continue
   if imdb_to_show[imdb_id]["notion_row"].get_value(ColumnType.RELATION,
                                                    "Shows DB Reference"):
