@@ -28,11 +28,11 @@ pprint("Fetching all seasons...")
 seasons_db = notion_database_query_all(notion, os.environ["SEASONS_DB"])
 
 
-def sanitize_keywords(keywords: list) -> list:
-  sanitized_keywords = []
-  for w in keywords:
-    sanitized_keywords.extend(w.split(","))
-  return sanitized_keywords
+def sanitize_multi_select_list(words: list) -> list:
+  clean_list = []
+  for word in words:
+    clean_list.append(word.replace(",", ""))
+  return clean_list
 
 
 def update_notion_row_with_error(imdb_id: str, error_msg: str, row_id: str):
@@ -78,13 +78,14 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
   show.update_value(ColumnType.MULTI_SELECT, "Cast", tmdb.get_cast())
   show.update_value(ColumnType.MULTI_SELECT, "Creators", tmdb.get_creators())
   show.update_value(ColumnType.MULTI_SELECT, "Production Companies",
-                    tmdb.get_production_companies())
-  show.update_value(ColumnType.MULTI_SELECT, "Networks", tmdb.get_networks())
+                    sanitize_multi_select_list(tmdb.get_production_companies()))
+  show.update_value(ColumnType.MULTI_SELECT, "Networks",
+                    sanitize_multi_select_list(tmdb.get_networks()))
   show.update_value(ColumnType.MULTI_SELECT, "Countries", tmdb.get_countries())
   show.update_value(ColumnType.MULTI_SELECT, "Languages", tmdb.get_languages())
   show.update_value(ColumnType.MULTI_SELECT, "Genres", tmdb.get_genres())
   show.update_value(ColumnType.MULTI_SELECT, "Keywords",
-                    sanitize_keywords(tmdb.get_keywords()))
+                    sanitize_multi_select_list(tmdb.get_keywords()))
 
   show.update_value(ColumnType.NUMBER, "Number of Seasons",
                     tmdb.get_number_of_seasons())
