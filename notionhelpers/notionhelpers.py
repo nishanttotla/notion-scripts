@@ -49,6 +49,7 @@ def notion_database_query_all(notion: Client, database_id: str) -> dict:
 @dataclass
 class NotionRow():
   __row_id: str
+  __update_errors: str
   __properties: dict
   __pending_update: dict
   __sync_client: Client
@@ -56,6 +57,7 @@ class NotionRow():
   def __init__(self, row_id: str, properties: dict):
     """Basic constructor. Assumes that an empty row_id means the row is non-existent"""
     self.__row_id = row_id
+    self.__update_errors = ""
     self.__properties = properties
 
     if not row_id:
@@ -81,6 +83,10 @@ class NotionRow():
   def print(self):
     """Print the current version of the row (includes pending updates)."""
     pprint(self.__properties)
+
+  def get_update_errors(self) -> str:
+    """Returns update errors."""
+    return self.__update_errors
 
   def get_value(self, col_type: ColumnType, name: str):
     """Get value of field given type and name. Field must exist."""
@@ -201,6 +207,7 @@ class NotionRow():
   # about the full dictionaries for each property being empty - just the values
   # may be empty.
 
+  # TODO: if the field name doesn't exist, the update function should create it.
   def update_value(
       self,
       col_type: ColumnType,
@@ -242,6 +249,9 @@ class NotionRow():
     self.__pending_update[name] = self.__properties[name]
 
   def __update_date_value_internal(self, name: str, value: str):
+    if not "date" in self.__properties[name]:
+      self.__properties[name]["date"] = {"start": value}
+      self.__pending_update[name] = self.__properties[name]
     if self.__properties[name]["date"] == None:
       self.__properties[name]["date"] = {"start": value}
       self.__pending_update[name] = self.__properties[name]
@@ -423,20 +433,21 @@ class NotionRow():
 
     if self.__pending_update == {}:
       pprint("No pending updates for row ID: " + self.__row_id)
+      return
 
-    exception_str = ""
     try:
       resp = self.__sync_client.pages.update(**{
           "page_id": self.__row_id,
           "properties": self.__pending_update
       })
       self.__pending_update = {}
+      self.__update_errors = ""
       pprint(">>>> >>>> >>>> Updated Notion row successfully")
     except Exception as e:
       pprint("Got exception while update row for row ID: " + self.__row_id)
       pprint("Exception: " + str(e))
-      exception_str = "Exeption while updating row: " + str(e)
-    return exception_str
+      self.__update_errors = "Exception while updating row: " + str(e)
+    return self.__update_errors
 
   def delete_db_row(self):
     """Delete the page associated with the current row_id."""

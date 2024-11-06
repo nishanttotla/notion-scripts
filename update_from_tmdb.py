@@ -35,6 +35,18 @@ def sanitize_keywords(keywords: list) -> list:
   return sanitized_keywords
 
 
+def update_notion_row_with_error(imdb_id: str, row: NotionRow):
+  pprint(">>>> Updating Notion row WITH ERRORS for show with IMDB ID: " +
+         imdb_id)
+  new_row = NotionRow(row.get_id(), {"[IMPORT] Errors": {}})
+  new_row.set_client(notion)
+  new_row.update_value(ColumnType.RICH_TEXT, "[IMPORT] Errors",
+                       row.get_update_errors())
+  new_row.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
+                       datetime.today().strftime('%Y-%m-%d'))
+  new_row.update_db_row()
+
+
 def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
   pprint(">>>> Updating Notion row for show with IMDB ID: " +
          tmdb.get_imdb_id())
@@ -82,6 +94,9 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
                     datetime.today().strftime('%Y-%m-%d'))
   show.update_value(ColumnType.SELECT, "[IMPORT] Next Import Hint",
                     "Check Status")
+  show.clear_value(ColumnType.RICH_TEXT, "[IMPORT] Errors")
+  if show.update_db_row():
+    update_notion_row_with_error(tmdb.get_imdb_id(), show)
   show.update_db_row()
 
 

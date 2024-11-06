@@ -65,7 +65,7 @@ class TmdbEntity():
 
     # Cache value for 60 days (60*86400 seconds)
     cache.set(self.__imdb_id, self.__full_entity, expire=5184000)
-    pprint("--------------------------------------")
+    pprint("--------------------------------------------------------------")
     pprint("Fetched TMDB entity successfuly for IMDB ID: " + self.__imdb_id)
 
   def print(self):

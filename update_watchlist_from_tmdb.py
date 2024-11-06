@@ -33,6 +33,21 @@ def sanitize_keywords(keywords: list) -> list:
   return sanitized_keywords
 
 
+def update_notion_row_with_error(imdb_id: str, row: NotionRow):
+  pprint(">>>> Updating Notion row WITH ERRORS for show with IMDB ID: " +
+         imdb_id)
+  new_row = NotionRow(row.get_id(), {
+      "[IMPORT] Errors": {},
+      "[IMPORT] Last Import Date": {}
+  })
+  new_row.set_client(notion)
+  new_row.update_value(ColumnType.RICH_TEXT, "[IMPORT] Errors",
+                       row.get_update_errors())
+  new_row.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
+                       datetime.today().strftime('%Y-%m-%d'))
+  new_row.update_db_row()
+
+
 def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
   pprint(">>>> Updating Notion row for show with IMDB ID: " +
          tmdb.get_imdb_id())
@@ -76,7 +91,9 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
 
   show.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
                     datetime.today().strftime('%Y-%m-%d'))
-  show.update_db_row()
+  show.clear_value(ColumnType.RICH_TEXT, "[IMPORT] Errors")
+  if show.update_db_row():
+    update_notion_row_with_error(tmdb.get_imdb_id(), show)
 
 
 def delete_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
@@ -110,7 +127,6 @@ for result in shows_db["results"]:
   }
 
 # Update requested IMDB IDs or everything.
-# TODO: Add an error field to rows so that the issue can be printed in Notion
 update_imdb_ids = []
 if not input_imdb_ids:
   update_imdb_ids = list(imdb_to_show.keys())
