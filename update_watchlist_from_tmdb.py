@@ -91,6 +91,8 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
 
   show.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
                     datetime.today().strftime('%Y-%m-%d'))
+  show.update_value(ColumnType.SELECT, "[IMPORT] Next Import Hint",
+                    "Check Status")
   show.clear_value(ColumnType.RICH_TEXT, "[IMPORT] Errors")
   if show.update_db_row():
     update_notion_row_with_error(tmdb.get_imdb_id(), show.get_update_errors(),
@@ -115,9 +117,13 @@ for result in shows_db["results"]:
   notion_row = NotionRow(result["id"], result["properties"])
   notion_row.set_client(notion)
   imdb_id = notion_row.get_value(ColumnType.RICH_TEXT, "IMDB ID")[0]
-
+  import_hint = notion_row.get_value(ColumnType.SELECT,
+                                     "[IMPORT] Next Import Hint")
+  cache_update_needed = False
+  if import_hint == "Force Update":
+    cache_update_needed = True
   try:
-    tmdb_entity = TmdbEntity(imdb_id, force_update_cache=False)
+    tmdb_entity = TmdbEntity(imdb_id, force_update_cache=cache_update_needed)
   except Exception as e:
     pprint("Could not fetch TMDB Entity for IMDB ID: " + imdb_id)
     pprint("Exception: " + str(e))
@@ -144,6 +150,13 @@ for imdb_id in update_imdb_ids:
                                                    "Shows DB Reference"):
     delete_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
                            imdb_to_show[imdb_id]["tmdb_entity"])
+    continue
+
+  import_hint = imdb_to_show[imdb_id]["notion_row"].get_value(
+      ColumnType.SELECT, "[IMPORT] Next Import Hint")
+  if import_hint != "Update" and import_hint != "Force Update":
+    pprint("Skipping update for IMDB ID: " + imdb_id + " with import_hint=" +
+           str(import_hint))
     continue
 
   update_show_notion_row(imdb_to_show[imdb_id]["notion_row"],
