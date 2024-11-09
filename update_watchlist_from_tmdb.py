@@ -73,8 +73,10 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
     show.update_value(ColumnType.SELECT, "Content Rating (US)",
                       tmdb.get_content_rating())
 
-  show.update_value(ColumnType.MULTI_SELECT, "Cast", tmdb.get_cast())
-  show.update_value(ColumnType.MULTI_SELECT, "Creators", tmdb.get_creators())
+  show.update_value(ColumnType.MULTI_SELECT, "Cast",
+                    sanitize_multi_select_list(tmdb.get_cast()))
+  show.update_value(ColumnType.MULTI_SELECT, "Creators",
+                    sanitize_multi_select_list(tmdb.get_creators()))
   show.update_value(ColumnType.MULTI_SELECT, "Production Companies",
                     sanitize_multi_select_list(tmdb.get_production_companies()))
   show.update_value(ColumnType.MULTI_SELECT, "Networks",
