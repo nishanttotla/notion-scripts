@@ -192,3 +192,12 @@ class TmdbEntity():
       runtime = runtime + (0 if
                            (episode["runtime"] == None) else episode["runtime"])
     return runtime
+
+  def get_season_runtimes_list_mins(self, season_number: int) -> int:
+    self.__validate_season_number(season_number)
+
+    runtimes = []
+    for episode in self.__full_entity[self.__season_key(
+        season_number)]["episodes"]:
+      runtimes.append(0 if (episode["runtime"] == None) else episode["runtime"])
+    return runtimes

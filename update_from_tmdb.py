@@ -124,6 +124,9 @@ def update_season_notion_row(show_id: str, season: NotionRow, tmdb: TmdbEntity):
                       tmdb.get_season_number_of_episodes(season_number))
   season.update_value(ColumnType.NUMBER, "Total Runtime (mins)",
                       tmdb.get_season_runtime_mins(season_number))
+  per_episode_runtimes = str(tmdb.get_season_runtimes_list_mins(season_number))
+  season.update_value(ColumnType.RICH_TEXT, "Per Episode Runtimes (mins)",
+                      per_episode_runtimes[1:-1])
   if tmdb.get_backdrop_path_url():
     season.update_value(ColumnType.FILES,
                         "Backdrop",
