@@ -30,10 +30,8 @@ class TmdbEntity():
 
       # If a cached entity is found, use that to avoid multiple (5) RPCs
       if cached_full_entity:
-        pprint("--------------------------------------------------------------")
-        pprint("Fetched CACHED TMDB entity successfuly for IMDB ID: " +
-               self.__imdb_id + " with TMDB ID: " +
-               str(cached_full_entity["id"]))
+        pprint("Fetched CACHED TMDB entity for IMDB ID: " + self.__imdb_id +
+               " with TMDB ID: " + str(cached_full_entity["id"]))
         self.__full_entity = cached_full_entity
         self.__tmdb_id = cached_full_entity["id"]
         return
@@ -67,8 +65,7 @@ class TmdbEntity():
     # TODO: How to check if the responses are bad?
 
     cache.set(self.__imdb_id, self.__full_entity, expire=kCacheTtlDays * 86400)
-    pprint("--------------------------------------------------------------")
-    pprint("Fetched TMDB entity successfuly for IMDB ID: " + self.__imdb_id)
+    pprint("Fetched TMDB entity for IMDB ID: " + self.__imdb_id)
 
   def print(self):
     pprint(self.__full_entity)
