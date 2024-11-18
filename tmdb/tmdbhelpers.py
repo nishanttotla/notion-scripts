@@ -2,11 +2,13 @@ from dataclasses import dataclass
 from diskcache import Cache
 import os
 from pprint import pprint
+from datetime import datetime, timedelta
 import requests
 import tmdbsimple as tmdb
 
 kMaxSupportedSeasons = 20
 kDefaultContentRatingCountryCode = "US"
+kCacheTtlDays = 15
 
 
 @dataclass
@@ -60,11 +62,11 @@ class TmdbEntity():
     self.__full_entity["credits"] = fetcher.credits()
     self.__full_entity["content_ratings"] = fetcher.content_ratings()
     self.__full_entity["keywords"] = fetcher.keywords()
+    self.__full_entity["import_date"] = datetime.today().strftime('%Y-%m-%d')
 
     # TODO: How to check if the responses are bad?
 
-    # Cache value for 60 days (60*86400 seconds)
-    cache.set(self.__imdb_id, self.__full_entity, expire=5184000)
+    cache.set(self.__imdb_id, self.__full_entity, expire=kCacheTtlDays * 86400)
     pprint("--------------------------------------------------------------")
     pprint("Fetched TMDB entity successfuly for IMDB ID: " + self.__imdb_id)
 
@@ -75,6 +77,13 @@ class TmdbEntity():
 
   def __extract_name(self, d: dict):
     return d["name"]
+
+  def get_import_date(self) -> str:
+    if "import_date" in self.__full_entity:
+      return self.__full_entity["import_date"]
+    # If import date is missing for some reason, assume that data is stale
+    stale_date = datetime.now() - timedelta(days=kCacheTtlDays)
+    return stale_date.strftime('%Y-%m-%d')
 
   def get_imdb_id(self) -> str:
     return self.__imdb_id

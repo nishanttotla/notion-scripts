@@ -93,10 +93,8 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
                     tmdb.get_number_of_seasons())
   show.update_value(ColumnType.NUMBER, "TMDB Rating", tmdb.get_tmdb_rating())
 
-  # TODO: Last Import Date may make more sense if it were the date of the last
-  # force update only
   show.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
-                    datetime.today().strftime('%Y-%m-%d'))
+                    tmdb.get_import_date())
   show.update_value(ColumnType.SELECT, "[IMPORT] Next Import Hint",
                     "Check Status")
   show.clear_value(ColumnType.RICH_TEXT, "[IMPORT] Errors")
@@ -134,7 +132,7 @@ def update_season_notion_row(show_id: str, season: NotionRow, tmdb: TmdbEntity):
                         title=tmdb.get_title() + " " + title)
 
   season.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
-                      datetime.today().strftime('%Y-%m-%d'))
+                      tmdb.get_import_date())
   season.update_db_row()
 
 

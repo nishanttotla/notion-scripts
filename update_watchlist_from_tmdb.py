@@ -92,7 +92,7 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
   show.update_value(ColumnType.NUMBER, "TMDB Rating", tmdb.get_tmdb_rating())
 
   show.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
-                    datetime.today().strftime('%Y-%m-%d'))
+                    tmdb.get_import_date())
   show.update_value(ColumnType.SELECT, "[IMPORT] Next Import Hint",
                     "Check Status")
   show.clear_value(ColumnType.RICH_TEXT, "[IMPORT] Errors")
