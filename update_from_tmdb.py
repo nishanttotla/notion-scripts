@@ -20,6 +20,9 @@ from pprint import pprint
 # THIS CODE MUST BE IDEMPOTENT !!!
 input_imdb_ids = sys.argv[1:]
 
+pprint("+++++++++++ Starting update_from_tmdb run at " +
+       str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
 # TODO: Maybe we need multiple clients for better bandwidth?
 notion = Client(auth=os.environ["NOTION_TOKEN"])
 pprint("Fetching all shows...")
