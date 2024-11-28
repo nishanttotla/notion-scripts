@@ -106,7 +106,10 @@ def update_show_notion_row(show: NotionRow, tmdb: TmdbEntity):
                                  show.get_id())
 
 
-def update_season_notion_row(show_id: str, season: NotionRow, tmdb: TmdbEntity):
+def update_season_notion_row(show_id: str,
+                             season: NotionRow,
+                             tmdb: TmdbEntity,
+                             set_unwatched: bool = False):
   title = season.get_value(ColumnType.TITLE, "Season Index")[0]
   season_number = int(title.split(" ")[1])  # title looks like "Season 3"
   pprint(">> Updating Notion row for " + title + " for IMDB ID: " +
@@ -133,6 +136,9 @@ def update_season_notion_row(show_id: str, season: NotionRow, tmdb: TmdbEntity):
                         "Backdrop",
                         tmdb.get_backdrop_path_url(),
                         title=tmdb.get_title() + " " + title)
+
+  if set_unwatched:
+    season.update_value(ColumnType.SELECT, "Watch Status", "Not Started")
 
   season.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
                       tmdb.get_import_date())
@@ -162,7 +168,7 @@ def create_season_notion_row(show_id: str, season_number: int,
                            })
 
   # Update the row right away to fill in all available data
-  update_season_notion_row(show_id, season, tmdb)
+  update_season_notion_row(show_id, season, tmdb, set_unwatched=True)
 
 
 # We assume that all shows which are desired are added to the shows DB,
