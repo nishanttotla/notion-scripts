@@ -183,6 +183,10 @@ for result in shows_db["results"]:
   notion_row = NotionRow(result["id"], result["properties"])
   notion_row.set_client(notion)
   imdb_id = notion_row.get_value(ColumnType.RICH_TEXT, "IMDB ID")[0]
+
+  if input_imdb_ids and (not imdb_id in input_imdb_ids):
+    continue
+
   import_hint = notion_row.get_value(ColumnType.SELECT,
                                      "[IMPORT] Next Import Hint")
   cache_update_needed = False
@@ -205,19 +209,19 @@ for result in shows_db["results"]:
 for result in seasons_db["results"]:
   notion_row = NotionRow(result["id"], result["properties"])
   notion_row.set_client(notion)
-  imdb_id = show_id_to_imdb[notion_row.get_value(ColumnType.RELATION,
-                                                 "Show")[0]]
+
+  show_id = notion_row.get_value(ColumnType.RELATION, "Show")[0]
+  imdb_id = ""
+  # This check is needed for when input_imdb_ids is not empty
+  if show_id in show_id_to_imdb:
+    imdb_id = show_id_to_imdb[show_id]
+  else:
+    continue
+
   season_index = notion_row.get_value(ColumnType.TITLE, "Season Index")[0]
   imdb_to_show[imdb_id]["seasons_db_notion_rows"][season_index] = notion_row
 
-# Update requested IMDB IDs or everything.
-update_imdb_ids = []
-if not input_imdb_ids:
-  update_imdb_ids = list(imdb_to_show.keys())
-else:
-  update_imdb_ids = input_imdb_ids
-
-for imdb_id in update_imdb_ids:
+for imdb_id in imdb_to_show:
   if imdb_to_show[imdb_id]["tmdb_entity"] == {}:
     update_notion_row_with_error(imdb_id,
                                  "No TMDB Entity found for IMDB ID: " + imdb_id,
