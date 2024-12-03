@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Flask App</title>
+</head>
+<body>
+    <h1>Hello from Flask!</h1>
+</body>
+
+<form action="{{ url_for('handle_data') }}" method="post">
+    <input type="text" name="projectFilepath">
+    <input type="submit">
+</form>
+
+</html>
