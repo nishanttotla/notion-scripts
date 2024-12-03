@@ -1,3 +1,7 @@
 env_vars.sh
 tmdbcache/
 .DS_Store
+.replit
+ pyproject.toml
+ replit.nix
+ uv.lock
