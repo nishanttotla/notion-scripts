@@ -1,0 +1,325 @@
+import os
+import sys
+
+# Get the absolute path of the directory containing the module
+tmdb_module_directory = "./tmdb"
+notion_module_directory = "./notionhelpers"
+
+# Add the directory to the system path
+sys.path.append(tmdb_module_directory)
+sys.path.append(notion_module_directory)
+
+from datetime import datetime
+from notion_client import Client
+from notionhelpers import ColumnType
+from notionhelpers import notion_database_query_all
+from notionhelpers import NotionRow
+from tmdbhelpers import TmdbEntity
+from pprint import pprint
+
+
+class UpdateFromTmdb():
+  __notion: Client
+  __shows_db: dict
+  __seasons_db: dict
+  __input_imdb_ids: list
+  __imdb_to_show: dict
+  __show_id_to_imdb: dict
+  __is_watchlist: bool
+
+  # __watchlist_db: dict
+
+  def __init__(self, imdb_ids: list = [], is_watchlist: bool = False):
+    # TODO: Maybe we need multiple clients for better bandwidth?
+    self.__notion = Client(auth=os.environ["NOTION_TOKEN"])
+    self.__is_watchlist = is_watchlist
+
+    if not is_watchlist:
+      pprint("Fetching all shows...")
+      self.__shows_db = notion_database_query_all(self.__notion,
+                                                  os.environ["SHOWS_DB"])
+      pprint("Fetching all seasons...")
+      self.__seasons_db = notion_database_query_all(self.__notion,
+                                                    os.environ["SEASONS_DB"])
+    else:
+      pprint("Fetching watchlist...")
+      self.__shows_db = notion_database_query_all(self.__notion,
+                                                  os.environ["FUTURE_SHOWS_DB"])
+
+    self.__input_imdb_ids = imdb_ids
+    self.__imdb_to_show = {}
+    self.__show_id_to_imdb = {}
+
+  ############################## Helper Functions ##############################
+
+  def __sanitize_multi_select_list(self, words: list) -> list:
+    clean_list = []
+    for word in words:
+      clean_list.append(word.replace(",", ""))
+    return clean_list
+
+  ########################## Notion Updater Functions ##########################
+
+  def __update_notion_row_with_error(self, imdb_id: str, error_msg: str,
+                                     row_id: str):
+    pprint(">>>> Updating Notion row WITH ERRORS for show with IMDB ID: " +
+           imdb_id)
+    new_row = NotionRow(row_id, {
+        "[IMPORT] Errors": {},
+        "[IMPORT] Last Import Date": {}
+    })
+    new_row.set_client(self.__notion)
+    new_row.update_value(ColumnType.RICH_TEXT, "[IMPORT] Errors", error_msg)
+    new_row.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
+                         datetime.today().strftime('%Y-%m-%d'))
+    new_row.update_db_row()
+
+  def __update_show_notion_row(self, show: NotionRow, tmdb: TmdbEntity):
+    pprint(">>>> Updating Notion row for show with IMDB ID: " +
+           tmdb.get_imdb_id())
+
+    show.update_value(ColumnType.RICH_TEXT, "Original Title",
+                      tmdb.get_original_title())
+    show.update_value(ColumnType.RICH_TEXT, "Tagline", tmdb.get_tagline())
+    show.update_value(ColumnType.RICH_TEXT, "Plot", tmdb.get_plot())
+
+    if tmdb.get_backdrop_path_url():
+      show.update_value(ColumnType.FILES,
+                        "Backdrop",
+                        tmdb.get_backdrop_path_url(),
+                        title=tmdb.get_title())
+
+    show_release_date = tmdb.get_release_date()
+    if show_release_date != None:
+      show.update_value(ColumnType.DATE, "Release Date", show_release_date)
+
+    show.update_value(ColumnType.SELECT, "Status", tmdb.get_status())
+    show.update_value(ColumnType.SELECT, "Type", tmdb.get_type())
+
+    if tmdb.get_content_rating():
+      show.update_value(ColumnType.SELECT, "Content Rating (US)",
+                        tmdb.get_content_rating())
+
+    show.update_value(ColumnType.MULTI_SELECT, "Cast",
+                      self.__sanitize_multi_select_list(tmdb.get_cast()))
+    show.update_value(ColumnType.MULTI_SELECT, "Creators",
+                      self.__sanitize_multi_select_list(tmdb.get_creators()))
+    show.update_value(
+        ColumnType.MULTI_SELECT, "Production Companies",
+        self.__sanitize_multi_select_list(tmdb.get_production_companies()))
+    show.update_value(ColumnType.MULTI_SELECT, "Networks",
+                      self.__sanitize_multi_select_list(tmdb.get_networks()))
+    show.update_value(ColumnType.MULTI_SELECT, "Countries",
+                      tmdb.get_countries())
+    show.update_value(ColumnType.MULTI_SELECT, "Languages",
+                      tmdb.get_languages())
+    show.update_value(ColumnType.MULTI_SELECT, "Genres", tmdb.get_genres())
+    show.update_value(ColumnType.MULTI_SELECT, "Keywords",
+                      self.__sanitize_multi_select_list(tmdb.get_keywords()))
+
+    show.update_value(ColumnType.NUMBER, "Number of Seasons",
+                      tmdb.get_number_of_seasons())
+    show.update_value(ColumnType.NUMBER, "TMDB Rating", tmdb.get_tmdb_rating())
+
+    show.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
+                      tmdb.get_import_date())
+    show.update_value(ColumnType.SELECT, "[IMPORT] Next Import Hint",
+                      "Check Status")
+    show.clear_value(ColumnType.RICH_TEXT, "[IMPORT] Errors")
+    if show.update_db_row():
+      self.__update_notion_row_with_error(tmdb.get_imdb_id(),
+                                          show.get_update_errors(),
+                                          show.get_id())
+
+  def __delete_show_notion_row(self, show: NotionRow, tmdb: TmdbEntity):
+    pprint(">>>> Deleting Notion row for show with IMDB ID: " +
+           tmdb.get_imdb_id())
+    show.delete_db_row()
+
+  def __update_season_notion_row(self,
+                                 show_id: str,
+                                 season: NotionRow,
+                                 tmdb: TmdbEntity,
+                                 set_unwatched: bool = False):
+    title = season.get_value(ColumnType.TITLE, "Season Index")[0]
+    season_number = int(title.split(" ")[1])  # title looks like "Season 3"
+    pprint(">> Updating Notion row for " + title + " for IMDB ID: " +
+           tmdb.get_imdb_id())
+
+    season.update_value(ColumnType.RELATION,
+                        "Show", [show_id],
+                        relation_db=self.__shows_db)
+    season_air_date = tmdb.get_season_air_date(season_number)
+    if season_air_date != None:
+      season.update_value(ColumnType.DATE, "Air Date",
+                          tmdb.get_season_air_date(season_number))
+    season.update_value(ColumnType.RICH_TEXT, "Overview",
+                        tmdb.get_season_overview(season_number))
+    season.update_value(ColumnType.NUMBER, "Number of Episodes",
+                        tmdb.get_season_number_of_episodes(season_number))
+    season.update_value(ColumnType.NUMBER, "Total Runtime (mins)",
+                        tmdb.get_season_runtime_mins(season_number))
+    per_episode_runtimes = str(
+        tmdb.get_season_runtimes_list_mins(season_number))
+    season.update_value(ColumnType.RICH_TEXT, "Per Episode Runtimes (mins)",
+                        per_episode_runtimes[1:-1])
+    if tmdb.get_backdrop_path_url():
+      season.update_value(ColumnType.FILES,
+                          "Backdrop",
+                          tmdb.get_backdrop_path_url(),
+                          title=tmdb.get_title() + " " + title)
+
+    if set_unwatched:
+      season.update_value(ColumnType.SELECT, "Watch Status", "Not Started")
+
+    season.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
+                        tmdb.get_import_date())
+    season.update_db_row()
+
+  def __create_season_notion_row(self, show_id: str, season_number: int,
+                                 tmdb: TmdbEntity):
+    season = NotionRow("", {})
+    season.set_client(self.__notion)
+    title = "Season " + str(season_number)
+
+    pprint(">> Creating Notion row for " + title + " for IMDB ID: " +
+           tmdb.get_imdb_id())
+    season.create_field(ColumnType.TITLE, "Season Index", title)
+    season.create_field(ColumnType.RELATION, "Show", [show_id])
+    season.create_field(ColumnType.RICH_TEXT, "Overview",
+                        [tmdb.get_season_overview(season_number)])
+    # TODO: create other fields, will need notion functions
+    season.create_new_db_row(
+        os.environ["SEASONS_DB"],
+        icon={
+            "type": "external",
+            "external": {
+                "url": "https://www.notion.so/icons/view_green.svg"
+            }
+        })
+
+    # Update the row right away to fill in all available data
+    self.__update_season_notion_row(show_id, season, tmdb, set_unwatched=True)
+
+  ###################### Notion Rows Processing Functions ######################
+
+  def __process_shows(self):
+    for result in self.__shows_db["results"]:
+      notion_row = NotionRow(result["id"], result["properties"])
+      notion_row.set_client(self.__notion)
+      imdb_id = notion_row.get_value(ColumnType.RICH_TEXT, "IMDB ID")[0]
+
+      # If only specific IDs are requested, no need to process everything
+      if self.__input_imdb_ids and (not imdb_id in self.__input_imdb_ids):
+        continue
+
+      import_hint = notion_row.get_value(ColumnType.SELECT,
+                                         "[IMPORT] Next Import Hint")
+      cache_update_needed = False
+      if import_hint == "Force Update":
+        cache_update_needed = True
+      try:
+        tmdb_entity = TmdbEntity(imdb_id,
+                                 force_update_cache=cache_update_needed)
+      except Exception as e:
+        pprint("Could not fetch TMDB Entity for IMDB ID: " + imdb_id)
+        pprint("Exception: " + str(e))
+        tmdb_entity = {}
+      if not self.__is_watchlist:
+        self.__imdb_to_show[imdb_id] = {
+            "notion_row": notion_row,
+            "tmdb_entity": tmdb_entity,
+            "seasons_db_notion_rows": {}
+        }
+        self.__show_id_to_imdb[notion_row.get_id()] = imdb_id
+      else:
+        self.__imdb_to_show[imdb_id] = {
+            "notion_row": notion_row,
+            "tmdb_entity": tmdb_entity,
+        }
+
+  def __process_seasons(self):
+    for result in self.__seasons_db["results"]:
+      notion_row = NotionRow(result["id"], result["properties"])
+      notion_row.set_client(self.__notion)
+
+      show_id = notion_row.get_value(ColumnType.RELATION, "Show")[0]
+      imdb_id = ""
+      # show_id will be missing from show_id_to_imdb if this show was not
+      # processed by __process_shows
+      if show_id in self.__show_id_to_imdb:
+        imdb_id = self.__show_id_to_imdb[show_id]
+      else:
+        continue
+
+      season_index = notion_row.get_value(ColumnType.TITLE, "Season Index")[0]
+      self.__imdb_to_show[imdb_id]["seasons_db_notion_rows"][
+          season_index] = notion_row
+
+  ################################ API Functions ###############################
+
+  def update_shows_and_seasons(self):
+    if self.__is_watchlist:
+      raise NotImplementedError(
+          "update_shows_and_seasons is not implemented for is_watchlist=True")
+    self.__process_shows()
+    self.__process_seasons()
+
+    for imdb_id in self.__imdb_to_show:
+      if self.__imdb_to_show[imdb_id]["tmdb_entity"] == {}:
+        self.__update_notion_row_with_error(
+            imdb_id, "No TMDB Entity found for IMDB ID: " + imdb_id,
+            self.__imdb_to_show[imdb_id]["notion_row"].get_id())
+        continue
+      import_hint = self.__imdb_to_show[imdb_id]["notion_row"].get_value(
+          ColumnType.SELECT, "[IMPORT] Next Import Hint")
+      if import_hint != "Update" and import_hint != "Force Update":
+        pprint("Skipping update for IMDB ID: " + imdb_id +
+               " with import_hint=" + str(import_hint))
+        continue
+
+      self.__update_show_notion_row(self.__imdb_to_show[imdb_id]["notion_row"],
+                                    self.__imdb_to_show[imdb_id]["tmdb_entity"])
+      show_id = self.__imdb_to_show[imdb_id]["notion_row"].get_id()
+
+      num_seasons = self.__imdb_to_show[imdb_id][
+          "tmdb_entity"].get_number_of_seasons()
+      for s in range(1, num_seasons + 1):
+        season_index = "Season " + str(s)
+        if season_index in self.__imdb_to_show[imdb_id][
+            "seasons_db_notion_rows"]:
+          self.__update_season_notion_row(
+              show_id, self.__imdb_to_show[imdb_id]["seasons_db_notion_rows"]
+              [season_index], self.__imdb_to_show[imdb_id]["tmdb_entity"])
+        else:
+          self.__create_season_notion_row(
+              show_id, s, self.__imdb_to_show[imdb_id]["tmdb_entity"])
+
+  def update_watchlist(self):
+    if not self.__is_watchlist:
+      raise NotImplementedError(
+          "update_watchlist is not implemented for is_watchlist=False")
+    self.__process_shows()
+
+    for imdb_id in self.__imdb_to_show:
+      if self.__imdb_to_show[imdb_id]["tmdb_entity"] == {}:
+        self.__update_notion_row_with_error(
+            imdb_id, "No TMDB Entity found for IMDB ID: " + imdb_id,
+            self.__imdb_to_show[imdb_id]["notion_row"].get_id())
+        continue
+      if self.__imdb_to_show[imdb_id]["notion_row"].get_value(
+          ColumnType.RELATION, "Shows DB Reference"):
+        self.__delete_show_notion_row(
+            self.__imdb_to_show[imdb_id]["notion_row"],
+            self.__imdb_to_show[imdb_id]["tmdb_entity"])
+        continue
+
+      import_hint = self.__imdb_to_show[imdb_id]["notion_row"].get_value(
+          ColumnType.SELECT, "[IMPORT] Next Import Hint")
+      if import_hint != "Update" and import_hint != "Force Update":
+        pprint("Skipping update for IMDB ID: " + imdb_id +
+               " with import_hint=" + str(import_hint))
+        continue
+
+      self.__update_show_notion_row(self.__imdb_to_show[imdb_id]["notion_row"],
+                                    self.__imdb_to_show[imdb_id]["tmdb_entity"])
