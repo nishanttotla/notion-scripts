@@ -11,14 +11,19 @@
             <form action="{{ url_for('update_result') }}" method="post">
                 <input size=12 type="text" name="imdbId" placeholder="IMDB ID" style="background-color:#3F4448;color:white;border-radius:5px;border:none">
                 <input type="submit" onclick="$('#loading').show();" value="📥" style="background-color:#3F4448;color:white;border-radius:5px;border-width:0.5px;">
-            </form>
+            </form>           
         </td>
       </tr>
       <tr>
           <td>
               <div id="loading" style="display:none;font-size:70%"><img src="loading.gif" alt="" />Fetching...</div>
           </td>
-      </tr>
+      </tr>      
+      <tr>
+        <td style="font-size:70%;">
+            Last updated: {{result}}
+        </td>
+      </tr>      
     </table>    
 </body>
 

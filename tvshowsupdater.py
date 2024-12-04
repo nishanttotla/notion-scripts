@@ -27,8 +27,6 @@ class UpdateFromTmdb():
   __show_id_to_imdb: dict
   __is_watchlist: bool
 
-  # __watchlist_db: dict
-
   def __init__(self, imdb_ids: list = [], is_watchlist: bool = False):
     # TODO: Maybe we need multiple clients for better bandwidth?
     self.__notion = Client(auth=os.environ["NOTION_TOKEN"])
