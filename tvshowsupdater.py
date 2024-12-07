@@ -121,6 +121,9 @@ class UpdateFromTmdb():
 
     show.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
                       tmdb.get_import_date())
+    # TODO: Ideally, this import hint update should be done after the seasons
+    # are updated. Possible way to accomplish this is to update the show after
+    # seasons.
     show.update_value(ColumnType.SELECT, "[IMPORT] Next Import Hint",
                       "Check Status")
     show.clear_value(ColumnType.RICH_TEXT, "[IMPORT] Errors")
@@ -151,6 +154,10 @@ class UpdateFromTmdb():
     if season_air_date != None:
       season.update_value(ColumnType.DATE, "Air Date",
                           tmdb.get_season_air_date(season_number))
+    season_finale_date = tmdb.get_season_finale_date(season_number)
+    if season_finale_date != None:
+      season.update_value(ColumnType.DATE, "Finale Date",
+                          tmdb.get_season_finale_date(season_number))
     season.update_value(ColumnType.RICH_TEXT, "Overview",
                         tmdb.get_season_overview(season_number))
     season.update_value(ColumnType.NUMBER, "Number of Episodes",
