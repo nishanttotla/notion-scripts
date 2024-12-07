@@ -72,7 +72,7 @@ class UpdateFromTmdb():
                          datetime.today().strftime('%Y-%m-%d'))
     new_row.update_db_row()
 
-  def __update_show_notion_row(self, show: NotionRow, tmdb: TmdbEntity):
+  def __update_show_notion_row(self, show: NotionRow, tmdb: TmdbEntity) -> str:
     pprint(">>>> Updating Notion row for show with IMDB ID: " +
            tmdb.get_imdb_id())
 
@@ -131,6 +131,7 @@ class UpdateFromTmdb():
       self.__update_notion_row_with_error(tmdb.get_imdb_id(),
                                           show.get_update_errors(),
                                           show.get_id())
+    return show.get_update_errors()
 
   def __delete_show_notion_row(self, show: NotionRow, tmdb: TmdbEntity):
     pprint(">>>> Deleting Notion row for show with IMDB ID: " +
@@ -263,18 +264,20 @@ class UpdateFromTmdb():
 
   ################################ API Functions ###############################
 
-  def update_shows_and_seasons(self):
+  def update_shows_and_seasons(self) -> str:
     if self.__is_watchlist:
       raise NotImplementedError(
           "update_shows_and_seasons is not implemented for is_watchlist=True")
     self.__process_shows()
     self.__process_seasons()
+    error_log = ""
 
     for imdb_id in self.__imdb_to_show:
       if self.__imdb_to_show[imdb_id]["tmdb_entity"] == {}:
+        err = "No TMDB Entity found for IMDB ID: " + imdb_id
         self.__update_notion_row_with_error(
-            imdb_id, "No TMDB Entity found for IMDB ID: " + imdb_id,
-            self.__imdb_to_show[imdb_id]["notion_row"].get_id())
+            imdb_id, err, self.__imdb_to_show[imdb_id]["notion_row"].get_id())
+        error_log = error_log + err + "\n"
         continue
       import_hint = self.__imdb_to_show[imdb_id]["notion_row"].get_value(
           ColumnType.SELECT, "[IMPORT] Next Import Hint")
@@ -283,10 +286,13 @@ class UpdateFromTmdb():
                " with import_hint=" + str(import_hint))
         continue
 
-      self.__update_show_notion_row(self.__imdb_to_show[imdb_id]["notion_row"],
-                                    self.__imdb_to_show[imdb_id]["tmdb_entity"])
-      show_id = self.__imdb_to_show[imdb_id]["notion_row"].get_id()
+      err = self.__update_show_notion_row(
+          self.__imdb_to_show[imdb_id]["notion_row"],
+          self.__imdb_to_show[imdb_id]["tmdb_entity"])
+      if err:
+        error_log = error_log + err + "\n"
 
+      show_id = self.__imdb_to_show[imdb_id]["notion_row"].get_id()
       num_seasons = self.__imdb_to_show[imdb_id][
           "tmdb_entity"].get_number_of_seasons()
       for s in range(1, num_seasons + 1):
@@ -299,6 +305,8 @@ class UpdateFromTmdb():
         else:
           self.__create_season_notion_row(
               show_id, s, self.__imdb_to_show[imdb_id]["tmdb_entity"])
+    pprint(error_log)
+    return error_log
 
   def update_watchlist(self):
     if not self.__is_watchlist:
