@@ -22,12 +22,18 @@ def update_result():
   action_log = []
   if not imdb_ids:
     action_log.append("Cannot import with empty IMDB IDs.")
+  elif imdb_ids == "updateall":
+    pprint("+++++++++++ Starting update run for all IMDB IDs: " + " at " +
+           str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    updater = UpdateFromTmdb()
+    action_log = updater.update_shows_and_seasons()
   else:
     split_imdb_ids = imdb_ids.split(",")
     pprint("+++++++++++ Starting update run for IMDB IDs: " + imdb_ids +
            " at " + str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     updater = UpdateFromTmdb(imdb_ids=split_imdb_ids)
     action_log = updater.update_shows_and_seasons()
+
   if action_log:
     action_log.insert(
         0, "Received some errors while importing IMDB IDs: " + imdb_ids)
