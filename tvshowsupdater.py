@@ -264,20 +264,20 @@ class UpdateFromTmdb():
 
   ################################ API Functions ###############################
 
-  def update_shows_and_seasons(self) -> str:
+  def update_shows_and_seasons(self) -> list:
     if self.__is_watchlist:
       raise NotImplementedError(
           "update_shows_and_seasons is not implemented for is_watchlist=True")
     self.__process_shows()
     self.__process_seasons()
-    error_log = ""
+    error_log = []
 
     for imdb_id in self.__imdb_to_show:
       if self.__imdb_to_show[imdb_id]["tmdb_entity"] == {}:
         err = "No TMDB Entity found for IMDB ID: " + imdb_id
         self.__update_notion_row_with_error(
             imdb_id, err, self.__imdb_to_show[imdb_id]["notion_row"].get_id())
-        error_log = error_log + err + "\n"
+        error_log.append(err)
         continue
       import_hint = self.__imdb_to_show[imdb_id]["notion_row"].get_value(
           ColumnType.SELECT, "[IMPORT] Next Import Hint")
@@ -290,7 +290,7 @@ class UpdateFromTmdb():
           self.__imdb_to_show[imdb_id]["notion_row"],
           self.__imdb_to_show[imdb_id]["tmdb_entity"])
       if err:
-        error_log = error_log + err + "\n"
+        error_log.append(err)
 
       show_id = self.__imdb_to_show[imdb_id]["notion_row"].get_id()
       num_seasons = self.__imdb_to_show[imdb_id][
@@ -305,7 +305,14 @@ class UpdateFromTmdb():
         else:
           self.__create_season_notion_row(
               show_id, s, self.__imdb_to_show[imdb_id]["tmdb_entity"])
-    pprint(error_log)
+
+    # IMDB IDs that came as input but were not found in the Shows DB.
+    if self.__input_imdb_ids:
+      invalid_imdb_ids = list(
+          set(self.__input_imdb_ids) - set(self.__imdb_to_show))
+      if invalid_imdb_ids:
+        error_log.append("Invalid IMDB IDs: " + str(invalid_imdb_ids))
+
     return error_log
 
   def update_watchlist(self):

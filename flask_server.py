@@ -15,18 +15,19 @@ def index():
 @app.route('/update_result', methods=['POST'])
 def update_result():
   imdb_id = request.form['imdbId']
-  res = "Successfully updated IMDB ID: " + imdb_id
-  error_log = ""
+  action_log = []
   if not imdb_id:
-    res = "Will not run script with empty IMDB ID."
+    action_log.append("Will not run script with empty IMDB ID.")
   else:
     pprint("+++++++++++ Starting update run for IMDB ID: " + imdb_id + " at " +
            str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     updater = UpdateFromTmdb(imdb_ids=[imdb_id])
-    error_log = updater.update_shows_and_seasons()
-  if error_log:
-    res = "Failed to update IMDB ID: " + imdb_id + ": " + error_log
-  return render_template('update_result.html', result=res)
+    action_log = updater.update_shows_and_seasons()
+  if action_log:
+    action_log.insert(0, "Failed to update IMDB ID: " + imdb_id)
+  else:
+    action_log.insert(0, "Successfully updated IMDB ID: " + imdb_id)
+  return render_template('update_result.html', result=action_log)
 
 
 if __name__ == '__main__':
