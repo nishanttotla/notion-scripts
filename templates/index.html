@@ -3,14 +3,20 @@
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
 <head>
     <title>Populate TMDB Data</title>
+    <style>
+        input:active {
+            box-shadow: 0 5px #787774;
+            transform: translateY(4px);            
+        }
+    </style>      
 </head>
-<body style="font-family:trebuchet ms;background-color:#2F3438;color:white;">
+<body style="font-family:trebuchet ms;background-color:#191919;color:white;">
     <table style="width:100%;">
       <tr>
         <td>
             <form action="{{ url_for('update_result') }}" method="post">
-                <input size=12 type="text" name="imdbId" placeholder="IMDB ID" style="background-color:#3F4448;color:white;border-radius:5px;border-style:solid;font-size:140%;">
-                <input type="submit" onclick="$('#loading').show();" value="📥" style="background-color:#3F4448;color:white;border-radius:5px;border-width:1px;border-style:solid;font-size:180%;">
+                <input size=14 type="text" name="imdbId" placeholder="IMDB ID" style="background-color:#2F3438;color:darkkhaki;border-radius:5px;border-style:solid;font-size:100%;vertical-align:text-bottom;">
+                <input type="submit" onclick="$('#loading').show();" value="📥📥📥" style="background-color:#2F3438;color:white;border-radius:5px;border-width:1px;border-style:solid;font-size:180%;">
             </form>
         </td>
       </tr>
