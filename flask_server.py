@@ -7,14 +7,18 @@ from flask import Flask, render_template, request
 app = Flask(__name__)
 
 
-@app.route('/')
+@app.route("/")
 def index():
-  return render_template('index.html')
+  return render_template("index.html")
 
 
-@app.route('/update_result', methods=['POST'])
+@app.route("/update_result", methods=["GET", "POST"])
 def update_result():
-  imdb_ids = request.form["imdbIds"].replace(" ", "")
+  imdb_ids = ""
+  if request.method == "GET":
+    imdb_ids = request.args.get("imdbIds", "").replace(" ", "")
+  elif request.method == "POST":
+    imdb_ids = request.form["imdbIds"].replace(" ", "")
   action_log = []
   if not imdb_ids:
     action_log.append("Cannot import with empty IMDB IDs.")
@@ -29,8 +33,8 @@ def update_result():
         0, "Received some errors while importing IMDB IDs: " + imdb_ids)
   else:
     action_log.insert(0, "Successfully imported IMDB IDs: " + imdb_ids)
-  return render_template('update_result.html', result=action_log)
+  return render_template("update_result.html", result=action_log)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   app.run(debug=True)
