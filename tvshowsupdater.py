@@ -17,6 +17,8 @@ from notionhelpers import NotionRow
 from tmdbhelpers import TmdbEntity
 from pprint import pprint
 
+kAutomateUpdateIntervalDays = 3
+
 
 class UpdateFromTmdb():
   __notion: Client
@@ -72,7 +74,8 @@ class UpdateFromTmdb():
                          datetime.today().strftime('%Y-%m-%d'))
     new_row.update_db_row()
 
-  def __update_show_notion_row(self, show: NotionRow, tmdb: TmdbEntity) -> str:
+  def __update_show_notion_row(self, show: NotionRow, tmdb: TmdbEntity,
+                               is_automated_update: bool) -> str:
     pprint(">>>> Updating Notion row for show with IMDB ID: " +
            tmdb.get_imdb_id())
 
@@ -124,8 +127,9 @@ class UpdateFromTmdb():
     # TODO: Ideally, this import hint update should be done after the seasons
     # are updated. Possible way to accomplish this is to update the show after
     # seasons.
-    show.update_value(ColumnType.SELECT, "[IMPORT] Next Import Hint",
-                      "Check Status")
+    if not is_automated_update:
+      show.update_value(ColumnType.SELECT, "[IMPORT] Next Import Hint",
+                        "Check Status")
     show.clear_value(ColumnType.RICH_TEXT, "[IMPORT] Errors")
     if show.update_db_row():
       self.__update_notion_row_with_error(tmdb.get_imdb_id(),
@@ -207,6 +211,31 @@ class UpdateFromTmdb():
     # Update the row right away to fill in all available data
     self.__update_season_notion_row(show_id, season, tmdb, set_unwatched=True)
 
+  def __cache_update_needed(self, import_hint: str,
+                            date_last_updated: str) -> bool:
+    if not date_last_updated:
+      return True
+    if import_hint == "Force Update":
+      return True
+    days_since_last_update = (
+        datetime.today() -
+        datetime.strptime(date_last_updated, '%Y-%m-%d')).days
+    if import_hint == "Automate" and (days_since_last_update
+                                      >= kAutomateUpdateIntervalDays):
+      return True
+    return False
+
+  def __run_automated_update(self, import_hint: str,
+                             date_last_updated: str) -> bool:
+    if import_hint != "Automate":
+      return False
+    days_since_last_update = (
+        datetime.today() -
+        datetime.strptime(date_last_updated, '%Y-%m-%d')).days
+    if days_since_last_update >= kAutomateUpdateIntervalDays:
+      return True
+    return False
+
   ###################### Notion Rows Processing Functions ######################
 
   def __process_shows(self):
@@ -221,12 +250,12 @@ class UpdateFromTmdb():
 
       import_hint = notion_row.get_value(ColumnType.SELECT,
                                          "[IMPORT] Next Import Hint")
-      cache_update_needed = False
-      if import_hint == "Force Update":
-        cache_update_needed = True
+      date_last_updated = notion_row.get_value(ColumnType.DATE,
+                                               "[IMPORT] Last Import Date")
       try:
         tmdb_entity = TmdbEntity(imdb_id,
-                                 force_update_cache=cache_update_needed)
+                                 force_update_cache=self.__cache_update_needed(
+                                     import_hint, date_last_updated or ""))
       except Exception as e:
         pprint("Could not fetch TMDB Entity for IMDB ID: " + imdb_id)
         pprint("Exception: " + str(e))
@@ -281,14 +310,19 @@ class UpdateFromTmdb():
         continue
       import_hint = self.__imdb_to_show[imdb_id]["notion_row"].get_value(
           ColumnType.SELECT, "[IMPORT] Next Import Hint")
-      if import_hint != "Update" and import_hint != "Force Update":
+      date_last_updated = self.__imdb_to_show[imdb_id]["notion_row"].get_value(
+          ColumnType.DATE, "[IMPORT] Last Import Date")
+      run_automated_update = self.__run_automated_update(
+          import_hint, date_last_updated)
+      if import_hint != "Update" and import_hint != "Force Update" and (
+          not run_automated_update):
         pprint("Skipping update for IMDB ID: " + imdb_id +
                " with import_hint=" + str(import_hint))
         continue
 
       err = self.__update_show_notion_row(
           self.__imdb_to_show[imdb_id]["notion_row"],
-          self.__imdb_to_show[imdb_id]["tmdb_entity"])
+          self.__imdb_to_show[imdb_id]["tmdb_entity"], run_automated_update)
       if err:
         error_log.append(err)
 
@@ -336,10 +370,16 @@ class UpdateFromTmdb():
 
       import_hint = self.__imdb_to_show[imdb_id]["notion_row"].get_value(
           ColumnType.SELECT, "[IMPORT] Next Import Hint")
-      if import_hint != "Update" and import_hint != "Force Update":
+      date_last_updated = self.__imdb_to_show[imdb_id]["notion_row"].get_value(
+          ColumnType.DATE, "[IMPORT] Last Import Date")
+      run_automated_update = self.__run_automated_update(
+          import_hint, date_last_updated)
+      if import_hint != "Update" and import_hint != "Force Update" and (
+          not run_automated_update):
         pprint("Skipping update for IMDB ID: " + imdb_id +
                " with import_hint=" + str(import_hint))
         continue
 
       self.__update_show_notion_row(self.__imdb_to_show[imdb_id]["notion_row"],
-                                    self.__imdb_to_show[imdb_id]["tmdb_entity"])
+                                    self.__imdb_to_show[imdb_id]["tmdb_entity"],
+                                    run_automated_update)
