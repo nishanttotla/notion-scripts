@@ -2,8 +2,9 @@ import os
 import sys
 
 # Get the absolute path of the directory containing the module
-tmdb_module_directory = "./tmdb"
-notion_module_directory = "./notionhelpers"
+current_directory = os.path.dirname(os.path.abspath(__file__))
+tmdb_module_directory = os.path.join(current_directory, "tmdb")
+notion_module_directory = os.path.join(current_directory, "notionhelpers")
 
 # Add the directory to the system path
 sys.path.append(tmdb_module_directory)
