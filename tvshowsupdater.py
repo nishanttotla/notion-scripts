@@ -15,6 +15,7 @@ from notionhelpers import ColumnType
 from notionhelpers import notion_database_query_all
 from notionhelpers import NotionRow
 from tmdbhelpers import TmdbEntity
+from tmdbhelpers import kDefaultTimezone
 from pprint import pprint
 
 kAutomateUpdateIntervalDays = 3
@@ -70,8 +71,9 @@ class UpdateFromTmdb():
     })
     new_row.set_client(self.__notion)
     new_row.update_value(ColumnType.RICH_TEXT, "[IMPORT] Errors", error_msg)
-    new_row.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
-                         datetime.today().strftime('%Y-%m-%d'))
+    new_row.update_value(
+        ColumnType.DATE, "[IMPORT] Last Import Date",
+        datetime.today().astimezone(kDefaultTimezone).strftime('%Y-%m-%d'))
     new_row.update_db_row()
 
   def __update_show_notion_row(self, show: NotionRow, tmdb: TmdbEntity,
@@ -218,8 +220,8 @@ class UpdateFromTmdb():
     if import_hint == "Force Update":
       return True
     days_since_last_update = (
-        datetime.today() -
-        datetime.strptime(date_last_updated, '%Y-%m-%d')).days
+        datetime.today().astimezone(kDefaultTimezone) - datetime.strptime(
+            date_last_updated, '%Y-%m-%d').astimezone(kDefaultTimezone)).days
     if import_hint == "Automate" and (days_since_last_update
                                       >= kAutomateUpdateIntervalDays):
       return True
@@ -230,8 +232,8 @@ class UpdateFromTmdb():
     if import_hint != "Automate":
       return False
     days_since_last_update = (
-        datetime.today() -
-        datetime.strptime(date_last_updated, '%Y-%m-%d')).days
+        datetime.today().astimezone(kDefaultTimezone) - datetime.strptime(
+            date_last_updated, '%Y-%m-%d').astimezone(kDefaultTimezone)).days
     if days_since_last_update >= kAutomateUpdateIntervalDays:
       return True
     return False

@@ -4,11 +4,13 @@ import os
 from pprint import pprint
 from datetime import datetime, timedelta
 import requests
+import pytz
 import tmdbsimple as tmdb
 
 kMaxSupportedSeasons = 20
 kDefaultContentRatingCountryCode = "US"
 kCacheTtlDays = 15
+kDefaultTimezone = pytz.timezone('America/New_York')
 
 
 @dataclass
@@ -60,7 +62,8 @@ class TmdbEntity():
     self.__full_entity["credits"] = fetcher.credits()
     self.__full_entity["content_ratings"] = fetcher.content_ratings()
     self.__full_entity["keywords"] = fetcher.keywords()
-    self.__full_entity["import_date"] = datetime.today().strftime('%Y-%m-%d')
+    self.__full_entity["import_date"] = datetime.today().astimezone(
+        kDefaultTimezone).strftime('%Y-%m-%d')
 
     # TODO: How to check if the responses are bad?
 
@@ -79,7 +82,8 @@ class TmdbEntity():
     if "import_date" in self.__full_entity:
       return self.__full_entity["import_date"]
     # If import date is missing for some reason, assume that data is stale
-    stale_date = datetime.now() - timedelta(days=kCacheTtlDays)
+    stale_date = datetime.now().astimezone(kDefaultTimezone) - timedelta(
+        days=kCacheTtlDays)
     return stale_date.strftime('%Y-%m-%d')
 
   def get_imdb_id(self) -> str:
