@@ -113,6 +113,9 @@ class UpdateFromTmdb():
         self.__sanitize_multi_select_list(tmdb.get_production_companies()))
     show.update_value(ColumnType.MULTI_SELECT, "Networks",
                       self.__sanitize_multi_select_list(tmdb.get_networks()))
+    show.update_value(
+        ColumnType.MULTI_SELECT, "Watch Providers (US)",
+        self.__sanitize_multi_select_list(tmdb.get_watch_providers()))
     show.update_value(ColumnType.MULTI_SELECT, "Countries",
                       tmdb.get_countries())
     show.update_value(ColumnType.MULTI_SELECT, "Languages",

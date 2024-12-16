@@ -31,7 +31,7 @@ class TmdbEntity():
     if not self.__force_update_cache:
       cached_full_entity = cache.get(self.__imdb_id)
 
-      # If a cached entity is found, use that to avoid multiple (5) RPCs
+      # If a cached entity is found, use that to avoid multiple (6 or more) RPCs
       if cached_full_entity:
         pprint("Fetched CACHED TMDB entity for IMDB ID: " + self.__imdb_id +
                " with TMDB ID: " + str(cached_full_entity["id"]))
@@ -58,6 +58,7 @@ class TmdbEntity():
     self.__full_entity["credits"] = fetcher.credits()
     self.__full_entity["content_ratings"] = fetcher.content_ratings()
     self.__full_entity["keywords"] = fetcher.keywords()
+    self.__full_entity["watch_providers"] = fetcher.watch_providers()
     self.__full_entity["import_date"] = datetime.today().astimezone(
         kDefaultTimezone).strftime('%Y-%m-%d')
 
@@ -169,6 +170,17 @@ class TmdbEntity():
 
   def get_networks(self) -> list:
     return list(map(self.__extract_name, self.__full_entity["networks"]))
+
+  def get_watch_providers(self,
+                          country_code: str = kDefaultCountryCode) -> list:
+    watch_providers = []
+    if country_code in self.__full_entity["watch_providers"]["results"]:
+      if "flatrate" in self.__full_entity["watch_providers"]["results"][
+          country_code]:
+        for item in self.__full_entity["watch_providers"]["results"][
+            country_code]["flatrate"]:
+          watch_providers.append(item["provider_name"])
+    return watch_providers
 
   def get_countries(self) -> list:
     return list(
