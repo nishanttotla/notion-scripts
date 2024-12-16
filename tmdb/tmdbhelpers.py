@@ -174,6 +174,8 @@ class TmdbEntity():
   def get_watch_providers(self,
                           country_code: str = kDefaultCountryCode) -> list:
     watch_providers = []
+    if not self.__full_entity["watch_providers"]:
+      return watch_providers
     if country_code in self.__full_entity["watch_providers"]["results"]:
       if "flatrate" in self.__full_entity["watch_providers"]["results"][
           country_code]:
