@@ -5,10 +5,11 @@ from pprint import pprint
 from datetime import datetime, timedelta
 import requests
 import pytz
+import math
 import tmdbsimple as tmdb
 
-kMaxSupportedSeasons = 20
-kDefaultContentRatingCountryCode = "US"
+kMaxSupportedSeasonsPerRequest = 20
+kDefaultCountryCode = "US"
 kCacheTtlDays = 15
 kDefaultTimezone = pytz.timezone('America/New_York')
 
@@ -52,13 +53,8 @@ class TmdbEntity():
     # Create a fetcher that will be used to call multiple endpoints.
     fetcher = tmdb.TV(self.__tmdb_id)
 
-    # TODO: Some shows have specials listed as season/0. That needs special handling.
-    append_seasons = ""
-    for season_number in range(1, kMaxSupportedSeasons):
-      append_seasons = append_seasons + self.__season_key(season_number) + ","
-    append_seasons = append_seasons + self.__season_key(kMaxSupportedSeasons)
+    self.__initialize_full_entity(fetcher)
 
-    self.__full_entity = fetcher.info(append_to_response=append_seasons)
     self.__full_entity["credits"] = fetcher.credits()
     self.__full_entity["content_ratings"] = fetcher.content_ratings()
     self.__full_entity["keywords"] = fetcher.keywords()
@@ -69,6 +65,40 @@ class TmdbEntity():
 
     cache.set(self.__imdb_id, self.__full_entity, expire=kCacheTtlDays * 86400)
     pprint("Fetched TMDB entity for IMDB ID: " + self.__imdb_id)
+
+  def __initialize_full_entity(self, tmdb_fetcher):
+    # TODO: Some shows have specials listed as season/0. That needs special handling.
+    append_seasons = ""
+    for season_number in range(1, kMaxSupportedSeasonsPerRequest):
+      append_seasons = append_seasons + self.__season_key(season_number) + ","
+    append_seasons = append_seasons + self.__season_key(
+        kMaxSupportedSeasonsPerRequest)
+
+    self.__full_entity = tmdb_fetcher.info(append_to_response=append_seasons)
+
+    if self.__full_entity["number_of_seasons"] > kMaxSupportedSeasonsPerRequest:
+      num_requests = math.ceil(
+          (self.__full_entity["number_of_seasons"] -
+           kMaxSupportedSeasonsPerRequest) / kMaxSupportedSeasonsPerRequest)
+
+      for request_number in range(1, 1 + num_requests):
+        append_seasons = ""
+        # Create request to fetch the next set of seasons
+        for season_number in range(
+            request_number * kMaxSupportedSeasonsPerRequest + 1,
+            request_number * kMaxSupportedSeasonsPerRequest +
+            kMaxSupportedSeasonsPerRequest):
+          append_seasons = append_seasons + self.__season_key(
+              season_number) + ","
+        append_seasons = append_seasons + self.__season_key(
+            request_number * kMaxSupportedSeasonsPerRequest +
+            kMaxSupportedSeasonsPerRequest)
+
+        # Fetch the next set of seasons
+        fetched_info = tmdb_fetcher.info(append_to_response=append_seasons)
+
+        # Merge with the stored full entity
+        self.__full_entity = self.__full_entity | fetched_info
 
   def print(self):
     pprint(self.__full_entity)
@@ -118,14 +148,12 @@ class TmdbEntity():
   def get_type(self) -> str:
     return self.__full_entity["type"]
 
-  def get_content_rating(self,
-                         country_code: str = kDefaultContentRatingCountryCode
-                         ) -> str:
+  def get_content_rating(self, country_code: str = kDefaultCountryCode) -> str:
     default_code = ""
     for result in self.__full_entity["content_ratings"]["results"]:
       if result["iso_3166_1"] == country_code:
         return result["rating"]
-      if result["iso_3166_1"] == kDefaultContentRatingCountryCode:
+      if result["iso_3166_1"] == kDefaultCountryCode:
         default_code = result["rating"]
     return default_code
 
@@ -171,7 +199,7 @@ class TmdbEntity():
     return "season/" + str(season_number)
 
   def __validate_season_number(self, season_number: int):
-    if season_number < 1 or season_number > kMaxSupportedSeasons:
+    if season_number < 1:
       raise ValueError("Accessing out of range season number: " +
                        str(season_number) + " for IMDB ID: " + self.__imdb_id)
     if season_number > self.__full_entity["number_of_seasons"]:
