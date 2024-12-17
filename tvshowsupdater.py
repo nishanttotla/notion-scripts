@@ -233,6 +233,8 @@ class UpdateFromTmdb():
 
   def __run_automated_update(self, import_hint: str,
                              date_last_updated: str) -> bool:
+    if not date_last_updated:
+      return True
     if import_hint != "Automate":
       return False
     days_since_last_update = (
