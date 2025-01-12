@@ -14,6 +14,43 @@ kCacheTtlDays = 15
 kDefaultTimezone = pytz.timezone('America/New_York')
 
 
+class SearchTmdb():
+  __query: str
+  __results: dict
+  __search_client = None
+
+  def __init__(self, query: str = ""):
+    self.__query = query
+    self.__results = {}
+
+    tmdb.API_KEY = os.environ["TMDB_API_KEY"]
+    self.__search_client = tmdb.Search()
+
+  ################################ API Functions ###############################
+
+  def set_query(self, query: str):
+    self.__query = query
+
+  def fetch_results(self):
+    results = []
+    if not self.__query:
+      return results
+
+    search_result = self.__search_client.tv(query=self.__query)
+    total_pages = search_result["total_pages"]
+
+    # Get the first page which is already available. Then get the rest if
+    # more pages exist.
+    results.extend(search_result["results"])
+
+    for page_number in range(2, total_pages + 1):
+      search_result = self.__search_client.tv(query=self.__query,
+                                              **{"page": page_number})
+      results.extend(search_result["results"])
+
+    return results
+
+
 @dataclass
 class TmdbEntity():
   __imdb_id: str
