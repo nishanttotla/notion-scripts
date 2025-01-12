@@ -16,10 +16,16 @@ from notionhelpers import ColumnType
 from notionhelpers import notion_database_query_all
 from notionhelpers import NotionRow
 from tmdbhelpers import TmdbEntity
+from tmdbhelpers import TmdbSearcher
 from tmdbhelpers import kDefaultTimezone
 from pprint import pprint
 
 kAutomateUpdateIntervalDays = 3
+
+
+def search_from_tmdb(query: str):
+  searcher = TmdbSearcher(query)
+  return searcher.fetch_results()
 
 
 class UpdateFromTmdb():

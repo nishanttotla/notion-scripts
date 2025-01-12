@@ -14,14 +14,12 @@ kCacheTtlDays = 15
 kDefaultTimezone = pytz.timezone('America/New_York')
 
 
-class SearchTmdb():
+class TmdbSearcher():
   __query: str
-  __results: dict
   __search_client = None
 
   def __init__(self, query: str = ""):
     self.__query = query
-    self.__results = {}
 
     tmdb.API_KEY = os.environ["TMDB_API_KEY"]
     self.__search_client = tmdb.Search()

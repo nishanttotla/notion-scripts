@@ -1,6 +1,7 @@
 import sys
 from pprint import pprint
 from datetime import datetime
+from tvshowsupdater import search_from_tmdb
 from tvshowsupdater import UpdateFromTmdb
 from flask import Flask, render_template, request
 
@@ -10,6 +11,18 @@ app = Flask(__name__)
 @app.route("/")
 def index():
   return render_template("index.html")
+
+
+@app.route("/search")
+def search():
+  return render_template("search.html")
+
+
+@app.route("/search_results", methods=["POST"])
+def search_results():
+  search_query = request.form["searchQuery"]
+  search_results = search_from_tmdb(search_query)
+  return render_template("search_results.html", result=search_results)
 
 
 @app.route("/update_result", methods=["GET", "POST"])
