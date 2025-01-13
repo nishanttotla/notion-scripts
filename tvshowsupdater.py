@@ -25,7 +25,11 @@ kAutomateUpdateIntervalDays = 3
 
 def search_from_tmdb(query: str):
   searcher = TmdbSearcher(query)
-  return searcher.fetch_results()
+  # sort results by vote average (outer sort) and then air date (inner sort)
+  latest_first = sorted(searcher.fetch_results(),
+                        key=lambda d: d["first_air_date"])
+  latest_first.reverse()
+  return sorted(latest_first, key=lambda d: 0 - d["vote_average"])
 
 
 class UpdateFromTmdb():

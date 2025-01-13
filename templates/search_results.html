@@ -48,7 +48,10 @@
         </td>
         <td style="font-size:90%;">
             <div style="color:darkkhaki;font-style:italic;">First Aired</div>       
-        </td>                                 
+        </td>
+        <td style="font-size:90%;">
+            <div style="color:darkkhaki;font-style:italic;">Rated</div>       
+        </td>                                         
       </tr>
       {% for item in result %}
       <tr>
@@ -64,11 +67,17 @@
                 {{ item["original_name"] }}<br>      
         </td>        
         <td style="font-size:80%;">
-                {{ item["overview"] }}<br>      
+                {{ item["overview"] }}<br><br>  
+                <b>Country:</b> {{ item["origin_country"] }}<br>
+                <b>Language:</b> {{ item["original_language"] }}<br>
+                <b>Popularity:</b> {{ item["popularity"] }}<br>
         </td>
         <td style="font-size:80%;">
                 {{ item["first_air_date"] }}<br>      
-        </td>                        
+        </td>
+        <td style="font-size:80%;">
+                {{ item["vote_average"] }}<br>      
+        </td>                                
       </tr>
       {% endfor %}
     </table>    
