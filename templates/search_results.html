@@ -16,7 +16,7 @@
         <td>
             <form action="{{ url_for('search_results') }}" method="post">
                 <input size=14 type="text" name="searchQuery" placeholder="Query" style="background-color:#2F3438;color:darkkhaki;border-radius:5px;border-style:solid;font-size:100%;vertical-align:text-bottom;">
-                <input type="submit" onclick="$('#loading').show();" value="Lookup" style="background-color:#2F3438;color:white;border-radius:5px;border-width:1px;border-style:solid;font-size:180%;">         
+                <input type="submit" onclick="$('#loading').show();" value="🔍" style="background-color:#2F3438;color:white;border-radius:5px;border-width:1px;border-style:solid;font-size:180%;">         
         </td>
       </tr>
       <tr>
@@ -27,40 +27,48 @@
     </table>
     <table style="width:100%;">          
       <tr>
-        <td style="font-size:70%;">
+        <td style="font-size:90%;">
             <div style="color:darkkhaki;font-style:italic;">Results Found: {{result|length}}</div>       
         </td>
       </tr>
     </table>
-    <table style="width:100%;" border="1">      
+    <table style="width:100%;text-align:center;" border="1">      
       <tr>
-        <td style="font-size:70%;">
+        <td style="font-size:90%;">
             <div style="color:darkkhaki;font-style:italic;">Poster</div>       
         </td>        
-        <td style="font-size:70%;">
+        <td style="font-size:90%;">
             <div style="color:darkkhaki;font-style:italic;">Name</div>       
         </td>
-        <td style="font-size:70%;">
+        <td style="font-size:90%;">
             <div style="color:darkkhaki;font-style:italic;">Original Name</div>       
         </td>        
-        <td style="font-size:70%;">
+        <td style="font-size:90%;">
             <div style="color:darkkhaki;font-style:italic;">Overview</div>       
-        </td>                         
-      </tr>      
-      {% for item in result %}   
-      <tr>
-        <td style="font-size:70%;">
-                <img src="https://image.tmdb.org/t/p/w154{{ item['poster_path'] }}" alt="Poster"><br>      
-        </td>        
-        <td style="font-size:70%;">
-                {{ item["name"] }}<br>      
         </td>
-        <td style="font-size:70%;">
+        <td style="font-size:90%;">
+            <div style="color:darkkhaki;font-style:italic;">First Aired</div>       
+        </td>                                 
+      </tr>
+      {% for item in result %}
+      <tr>
+        <td style="font-size:80%;">
+                <img src="https://image.tmdb.org/t/p/w154{{ item['poster_path'] }}" alt="Poster"><br>                        
+        </td>        
+        <td style="font-size:80%;">
+                {{ item["name"] }}<br><br>
+                <form action="{{ url_for('update_result') }}" method="post">
+                    <input type="submit" onclick="$('#loading').show();" value="+Watchlist" style="background-color:#2F3438;color:white;border-radius:5px;border-width:1px;border-style:solid;font-size:100%;">                                 
+        </td>
+        <td style="font-size:80%;">
                 {{ item["original_name"] }}<br>      
         </td>        
-        <td style="font-size:70%;">
+        <td style="font-size:80%;">
                 {{ item["overview"] }}<br>      
-        </td>                
+        </td>
+        <td style="font-size:80%;">
+                {{ item["first_air_date"] }}<br>      
+        </td>                        
       </tr>
       {% endfor %}
     </table>    

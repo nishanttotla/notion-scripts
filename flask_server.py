@@ -25,6 +25,11 @@ def search_results():
   return render_template("search_results.html", result=search_results)
 
 
+@app.route("/add_to_watchlist")
+def add_to_watchlist():
+  return render_template("search.html")
+
+
 @app.route("/update_result", methods=["GET", "POST"])
 def update_result():
   imdb_ids = ""
