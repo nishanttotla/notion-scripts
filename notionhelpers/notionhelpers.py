@@ -172,6 +172,8 @@ class NotionRow():
       self.__create_relation_field_internal(name, value)
     elif col_type == ColumnType.SELECT:
       self.__create_select_field_internal(name, value)
+    elif col_type == ColumnType.DATE:
+      self.__create_date_field_internal(name, value)
     else:
       raise NotImplementedError("No create_field implementation yet for type: " +
                                 type.name)
@@ -205,6 +207,11 @@ class NotionRow():
   def __create_select_field_internal(self, name: str, value: list):
     self.__properties[name] = {"type": "select"}
     self.__properties[name]["select"] = {"name": value}
+    self.__pending_update[name] = self.__properties[name]
+
+  def __create_date_field_internal(self, name: str, value: list):
+    self.__properties[name] = {"type": "date"}
+    self.__properties[name]["date"] = {"start": value}
     self.__pending_update[name] = self.__properties[name]
 
   ############################## Setter Functions ##############################

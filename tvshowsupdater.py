@@ -175,6 +175,9 @@ class AddFromTmdb():
     show.create_field(ColumnType.RICH_TEXT, "IMDB ID", imdb_id)
     show.create_field(ColumnType.SELECT, "[IMPORT] Next Import Hint",
                       "Automate")
+    show.create_field(
+        ColumnType.DATE, "Date Added",
+        datetime.today().astimezone(kDefaultTimezone).strftime('%Y-%m-%d'))
     # TODO: create other fields, will need notion functions
 
     db = os.environ["SHOWS_DB"]
