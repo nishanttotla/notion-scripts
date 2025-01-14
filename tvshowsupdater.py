@@ -78,6 +78,8 @@ class AddFromTmdb():
            self.__tmdb_entity.get_imdb_id())
     show.create_field(ColumnType.TITLE, "Title", title)
     show.create_field(ColumnType.RICH_TEXT, "IMDB ID", imdb_id)
+    show.create_field(ColumnType.SELECT, "[IMPORT] Next Import Hint",
+                      "Automate")
     # TODO: create other fields, will need notion functions
 
     db = os.environ["SHOWS_DB"]

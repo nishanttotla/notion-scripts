@@ -170,6 +170,8 @@ class NotionRow():
       self.__create_title_field_internal(name, value)
     elif col_type == ColumnType.RELATION:
       self.__create_relation_field_internal(name, value)
+    elif col_type == ColumnType.SELECT:
+      self.__create_select_field_internal(name, value)
     else:
       raise NotImplementedError("No create_field implementation yet for type: " +
                                 type.name)
@@ -198,6 +200,11 @@ class NotionRow():
     for item in value:
       list_tagged.append({"id": item})
     self.__properties[name]["relation"] = list_tagged
+    self.__pending_update[name] = self.__properties[name]
+
+  def __create_select_field_internal(self, name: str, value: list):
+    self.__properties[name] = {"type": "select"}
+    self.__properties[name]["select"] = {"name": value}
     self.__pending_update[name] = self.__properties[name]
 
   ############################## Setter Functions ##############################
