@@ -55,6 +55,100 @@ class AddFromTmdb():
       pprint("Exception: " + str(e))
       self.__error_message = str(e)
 
+  ############################## Helper Functions ##############################
+
+  def __sanitize_multi_select_list(self, words: list) -> list:
+    clean_list = []
+    for word in words:
+      clean_list.append(word.replace(",", ""))
+    return clean_list
+
+  def __update_notion_row_with_error(self, imdb_id: str, error_msg: str,
+                                     row_id: str):
+    pprint(">>>> Updating Notion row WITH ERRORS for show with IMDB ID: " +
+           imdb_id)
+    new_row = NotionRow(row_id, {
+        "[IMPORT] Errors": {},
+        "[IMPORT] Last Import Date": {}
+    })
+    new_row.set_client(self.__notion)
+    new_row.update_value(ColumnType.RICH_TEXT, "[IMPORT] Errors", error_msg)
+    new_row.update_value(
+        ColumnType.DATE, "[IMPORT] Last Import Date",
+        datetime.today().astimezone(kDefaultTimezone).strftime('%Y-%m-%d'))
+    new_row.update_db_row()
+
+  def __update_show_notion_row(self, show: NotionRow) -> str:
+    pprint(">>>> Updating Notion row for show with IMDB ID: " +
+           self.__tmdb_entity.get_imdb_id())
+
+    show.update_value(ColumnType.RICH_TEXT, "Original Title",
+                      self.__tmdb_entity.get_original_title())
+    show.update_value(ColumnType.RICH_TEXT, "Tagline",
+                      self.__tmdb_entity.get_tagline())
+    show.update_value(ColumnType.RICH_TEXT, "Plot",
+                      self.__tmdb_entity.get_plot())
+
+    if self.__tmdb_entity.get_backdrop_path_url():
+      show.update_value(ColumnType.FILES,
+                        "Backdrop",
+                        self.__tmdb_entity.get_backdrop_path_url(),
+                        title=self.__tmdb_entity.get_title())
+
+    show_release_date = self.__tmdb_entity.get_release_date()
+    if show_release_date != None:
+      show.update_value(ColumnType.DATE, "Release Date", show_release_date)
+
+    show.update_value(ColumnType.SELECT, "Status",
+                      self.__tmdb_entity.get_status())
+    show.update_value(ColumnType.SELECT, "Type", self.__tmdb_entity.get_type())
+
+    if self.__tmdb_entity.get_content_rating():
+      show.update_value(ColumnType.SELECT, "Content Rating (US)",
+                        self.__tmdb_entity.get_content_rating())
+
+    show.update_value(
+        ColumnType.MULTI_SELECT, "Cast",
+        self.__sanitize_multi_select_list(self.__tmdb_entity.get_cast()))
+    show.update_value(
+        ColumnType.MULTI_SELECT, "Creators",
+        self.__sanitize_multi_select_list(self.__tmdb_entity.get_creators()))
+    show.update_value(
+        ColumnType.MULTI_SELECT, "Production Companies",
+        self.__sanitize_multi_select_list(
+            self.__tmdb_entity.get_production_companies()))
+    show.update_value(
+        ColumnType.MULTI_SELECT, "Networks",
+        self.__sanitize_multi_select_list(self.__tmdb_entity.get_networks()))
+    show.update_value(
+        ColumnType.MULTI_SELECT, "Watch Providers (US)",
+        self.__sanitize_multi_select_list(
+            self.__tmdb_entity.get_watch_providers()))
+    show.update_value(ColumnType.MULTI_SELECT, "Countries",
+                      self.__tmdb_entity.get_countries())
+    show.update_value(ColumnType.MULTI_SELECT, "Languages",
+                      self.__tmdb_entity.get_languages())
+    show.update_value(ColumnType.MULTI_SELECT, "Genres",
+                      self.__tmdb_entity.get_genres())
+    show.update_value(
+        ColumnType.MULTI_SELECT, "Keywords",
+        self.__sanitize_multi_select_list(self.__tmdb_entity.get_keywords()))
+
+    show.update_value(ColumnType.NUMBER, "Number of Seasons",
+                      self.__tmdb_entity.get_number_of_seasons())
+    show.update_value(ColumnType.NUMBER, "TMDB Rating",
+                      self.__tmdb_entity.get_tmdb_rating())
+
+    show.update_value(ColumnType.DATE, "[IMPORT] Last Import Date",
+                      self.__tmdb_entity.get_import_date())
+
+    show.clear_value(ColumnType.RICH_TEXT, "[IMPORT] Errors")
+    if show.update_db_row():
+      self.__update_notion_row_with_error(self.__tmdb_entity.get_imdb_id(),
+                                          show.get_update_errors(),
+                                          show.get_id())
+    return show.get_update_errors()
+
   ################################ API Functions ###############################
 
   def get_error_message(self):
@@ -67,6 +161,7 @@ class AddFromTmdb():
     return self.__tmdb_entity.get_imdb_id()
 
   def create_show_notion_row(self):
+    # TODO: Add a lookup to check if this IMDB ID already exists
     if not self.__entity_available:
       raise ValueError("Entity is unavailable for TMDB ID: " + self.__tmdb_id)
     show = NotionRow("", {})
@@ -97,7 +192,7 @@ class AddFromTmdb():
                            })
 
     # Update the row right away to fill in all available data
-    # self.__update_season_notion_row(show_id, season, tmdb, set_unwatched=True)
+    self.__update_show_notion_row(show)
 
 
 class UpdateFromTmdb():
