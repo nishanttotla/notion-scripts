@@ -2,6 +2,7 @@ import sys
 from pprint import pprint
 from datetime import datetime
 from tvshowsupdater import search_from_tmdb
+from tvshowsupdater import AddFromTmdb
 from tvshowsupdater import UpdateFromTmdb
 from flask import Flask, render_template, request
 
@@ -25,9 +26,26 @@ def search_results():
   return render_template("search_results.html", result=search_results)
 
 
-@app.route("/add_to_watchlist")
+@app.route("/add_to_watchlist", methods=["POST"])
 def add_to_watchlist():
-  return render_template("search.html")
+  tmdb_id = request.form["tmdbId"]
+
+  print("TMDB ID: " + tmdb_id, flush=True)
+  add_entity = AddFromTmdb(tmdb_id=tmdb_id, is_watchlist=True)
+
+  # If there is an error message, then just return that, else return the
+  # full entity.
+  if add_entity.get_error_message():
+    return render_template("search.html", result=add_entity.get_error_message())
+
+  resp = ""
+  try:
+    add_entity.create_show_notion_row()
+    resp = "Successfully added " + add_entity.get_imdb_id() + " to Watchlist."
+  except Exception as e:
+    resp = "Could not add " + add_entity.get_imdb_id(
+    ) + " to watchlist: " + str(e)
+  return render_template("search.html", result=resp)
 
 
 @app.route("/update_result", methods=["GET", "POST"])

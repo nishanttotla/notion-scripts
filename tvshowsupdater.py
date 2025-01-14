@@ -32,6 +32,72 @@ def search_from_tmdb(query: str):
   return sorted(latest_first, key=lambda d: 0 - d["vote_average"])
 
 
+class AddFromTmdb():
+  __notion: Client
+  __tmdb_id: str
+  __is_watchlist: bool
+  __tmdb_entity: TmdbEntity
+  __entity_available: bool
+  __error_message: str
+
+  def __init__(self, tmdb_id: str = "", is_watchlist: bool = False):
+    self.__notion = Client(auth=os.environ["NOTION_TOKEN"])
+    self.__tmdb_id = tmdb_id
+    self.__is_watchlist = is_watchlist
+    self.__entity_available = False
+    self.__error_message = ""
+
+    try:
+      self.__tmdb_entity = TmdbEntity(tmdb_id=tmdb_id, force_update_cache=True)
+      self.__entity_available = True
+    except Exception as e:
+      pprint("Could not fetch TMDB Entity for TMDB ID: " + tmdb_id)
+      pprint("Exception: " + str(e))
+      self.__error_message = str(e)
+
+  ################################ API Functions ###############################
+
+  def get_error_message(self):
+    return self.__error_message
+
+  def get_entity(self):
+    return self.__tmdb_entity
+
+  def get_imdb_id(self):
+    return self.__tmdb_entity.get_imdb_id()
+
+  def create_show_notion_row(self):
+    if not self.__entity_available:
+      raise ValueError("Entity is unavailable for TMDB ID: " + self.__tmdb_id)
+    show = NotionRow("", {})
+    show.set_client(self.__notion)
+    title = self.__tmdb_entity.get_title()
+    imdb_id = self.__tmdb_entity.get_imdb_id()
+
+    pprint(">> Creating Notion row for show " + title + " with IMDB ID: " +
+           self.__tmdb_entity.get_imdb_id())
+    show.create_field(ColumnType.TITLE, "Title", title)
+    show.create_field(ColumnType.RICH_TEXT, "IMDB ID", imdb_id)
+    # TODO: create other fields, will need notion functions
+
+    db = os.environ["SHOWS_DB"]
+    icon = "https://www.notion.so/icons/movie-clapboard-play_orange.svg"
+    if self.__is_watchlist:
+      db = os.environ["FUTURE_SHOWS_DB"]
+      icon = "https://www.notion.so/icons/movie-clapboard-play_blue.svg"
+
+    show.create_new_db_row(db,
+                           icon={
+                               "type": "external",
+                               "external": {
+                                   "url": icon
+                               }
+                           })
+
+    # Update the row right away to fill in all available data
+    # self.__update_season_notion_row(show_id, season, tmdb, set_unwatched=True)
+
+
 class UpdateFromTmdb():
   __notion: Client
   __shows_db: dict
@@ -271,7 +337,7 @@ class UpdateFromTmdb():
       date_last_updated = notion_row.get_value(ColumnType.DATE,
                                                "[IMPORT] Last Import Date")
       try:
-        tmdb_entity = TmdbEntity(imdb_id,
+        tmdb_entity = TmdbEntity(imdb_id=imdb_id,
                                  force_update_cache=self.__cache_update_needed(
                                      import_hint, date_last_updated or ""))
       except Exception as e:

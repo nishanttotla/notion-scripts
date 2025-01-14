@@ -25,7 +25,16 @@
               <div id="loading" style="display:none;font-size:70%"><img src="static/loading.gif" title="Fetching..." alt="" /></div>
           </td>
       </tr>
-    </table>    
+    </table>
+    {% if result %}
+    <table style="width:100%;">          
+      <tr>
+        <td style="font-size:90%;">
+            <div style="color:darkkhaki;font-style:italic;">Result: {{result}}</div>       
+        </td>
+      </tr>
+    </table>   
+    {% endif %}  
 </body>
 
 </html>

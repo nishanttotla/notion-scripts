@@ -16,7 +16,8 @@
         <td>
             <form action="{{ url_for('search_results') }}" method="post">
                 <input size=14 type="text" name="searchQuery" placeholder="Query" style="background-color:#2F3438;color:darkkhaki;border-radius:5px;border-style:solid;font-size:100%;vertical-align:text-bottom;">
-                <input type="submit" onclick="$('#loading').show();" value="🔍" style="background-color:#2F3438;color:white;border-radius:5px;border-width:1px;border-style:solid;font-size:180%;">         
+                <input type="submit" onclick="$('#loading').show();" value="🔍" style="background-color:#2F3438;color:white;border-radius:5px;border-width:1px;border-style:solid;font-size:180%;">
+            </form>
         </td>
       </tr>
       <tr>
@@ -60,15 +61,17 @@
         </td>        
         <td style="font-size:80%;">
                 {{ item["name"] }}<br><br>
-                <form action="{{ url_for('update_result') }}" method="post">
-                    <input type="submit" onclick="$('#loading').show();" value="+Watchlist" style="background-color:#2F3438;color:white;border-radius:5px;border-width:1px;border-style:solid;font-size:100%;">                                 
+                <form action="{{ url_for('add_to_watchlist') }}" method="post">
+                    <input size=14 type="hidden" name="tmdbId" value="{{ item['id'] }}" style="background-color:#2F3438;color:darkkhaki;border-radius:5px;border-style:solid;font-size:100%;vertical-align:text-bottom;">
+                    <input type="submit" onclick="$('#loading').show();" value="+Watchlist" style="background-color:#2F3438;color:white;border-radius:5px;border-width:1px;border-style:solid;font-size:100%;">
+                </form>                                 
         </td>
         <td style="font-size:80%;">
                 {{ item["original_name"] }}<br>      
         </td>        
         <td style="font-size:80%;">
                 {{ item["overview"] }}<br><br>  
-                <b>Country:</b> {{ item["origin_country"] }}<br>
+                <b>Countries:</b> {{ item["origin_country"] }}<br>
                 <b>Language:</b> {{ item["original_language"] }}<br>
                 <b>Popularity:</b> {{ item["popularity"] }}<br>
         </td>

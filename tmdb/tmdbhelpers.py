@@ -56,14 +56,14 @@ class TmdbEntity():
   __full_entity: dict
   __force_update_cache: bool
 
-  def __init__(self, imdb_id, tmdb_id="", force_update_cache=False):
+  def __init__(self, imdb_id="", tmdb_id="", force_update_cache=False):
     self.__imdb_id = imdb_id
     self.__tmdb_id = tmdb_id
     self.__full_entity = {}
     self.__force_update_cache = force_update_cache
 
     cache = Cache("./tmdbcache")
-    if not self.__force_update_cache:
+    if (not self.__force_update_cache) and self.__imdb_id:
       cached_full_entity = cache.get(self.__imdb_id)
 
       # If a cached entity is found, use that to avoid multiple (6 or more) RPCs
@@ -78,6 +78,10 @@ class TmdbEntity():
 
     # Fetch tmdb_id if it is empty
     if not self.__tmdb_id:
+      if not self.__imdb_id:
+        raise KeyError(
+            "At least one of IMDB and TMDB IDs is required for initialization.")
+
       search_result = tmdb.Find(imdb_id).info(external_source="imdb_id")
       if len(search_result["tv_results"]) == 0:
         raise KeyError("No TV show found for imdb_id: " + self.__imdb_id)
@@ -87,6 +91,14 @@ class TmdbEntity():
 
     # Create a fetcher that will be used to call multiple endpoints.
     fetcher = tmdb.TV(self.__tmdb_id)
+
+    # If only tmdb_id was provided, then we need to first set imdb_id.
+    if not self.__imdb_id:
+      fetcher.external_ids()
+      self.__imdb_id = fetcher.imdb_id
+      if not self.__imdb_id:
+        raise KeyError("IMDB ID is not available for TMDB Entity: " +
+                       self.__tmdb_id)
 
     self.__initialize_full_entity(fetcher)
 
