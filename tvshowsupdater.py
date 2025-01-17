@@ -172,7 +172,7 @@ class AddFromTmdb():
     pprint(">> Creating Notion row for show " + title + " with IMDB ID: " +
            self.__tmdb_entity.get_imdb_id())
     show.create_field(ColumnType.TITLE, "Title", title)
-    show.create_field(ColumnType.RICH_TEXT, "IMDB ID", imdb_id)
+    show.create_field(ColumnType.RICH_TEXT, "IMDB ID", [imdb_id])
     show.create_field(ColumnType.SELECT, "[IMPORT] Next Import Hint",
                       "Automate")
     show.create_field(

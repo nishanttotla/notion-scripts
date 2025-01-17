@@ -204,12 +204,12 @@ class NotionRow():
     self.__properties[name]["relation"] = list_tagged
     self.__pending_update[name] = self.__properties[name]
 
-  def __create_select_field_internal(self, name: str, value: list):
+  def __create_select_field_internal(self, name: str, value: str):
     self.__properties[name] = {"type": "select"}
     self.__properties[name]["select"] = {"name": value}
     self.__pending_update[name] = self.__properties[name]
 
-  def __create_date_field_internal(self, name: str, value: list):
+  def __create_date_field_internal(self, name: str, value: str):
     self.__properties[name] = {"type": "date"}
     self.__properties[name]["date"] = {"start": value}
     self.__pending_update[name] = self.__properties[name]
